@@ -7687,6 +7687,11 @@ static void K_drawKartSpeedometer(void)
 		convSpeed = FixedDiv(stplyr->speed, mapobjectscale)/FRACUNIT;
 		V_DrawKartString(SPDM_X, SPDM_Y, V_HUDTRANS|splitflags, va("%3d fu/t", convSpeed));
 	}
+	else if (cv_kartspeedometer.value == 4) // Percent
+	{
+		convSpeed = (FixedDiv(stplyr->speed, K_GetKartSpeed(stplyr, false))*100)/FRACUNIT;
+		V_DrawKartString(SPDM_X, SPDM_Y, V_HUDTRANS|splitflags, va("%4d%%", convSpeed));
+	}
 }
 
 static void K_drawKartBumpersOrKarma(void)
