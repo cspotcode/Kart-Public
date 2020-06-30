@@ -7689,8 +7689,14 @@ static void K_drawKartSpeedometer(void)
 	}
 	else if (cv_kartspeedometer.value == 4) // Percent
 	{
-		convSpeed = (FixedDiv(stplyr->speed, K_GetKartSpeed(stplyr, false))*100)/FRACUNIT;
-		V_DrawKartString(SPDM_X, SPDM_Y, V_HUDTRANS|splitflags, va("%4d%%", convSpeed));
+		// so code breaks if someone attempts to join from spectator since it sets
+		// their mo to NULL
+		// so can we just check if their mo is NULL????
+		if (stplyr->mo) 
+		{
+			convSpeed = (FixedDiv(stplyr->speed, K_GetKartSpeed(stplyr, false))*100)/FRACUNIT;
+			V_DrawKartString(SPDM_X, SPDM_Y, V_HUDTRANS|splitflags, va("%4d%%", convSpeed));
+		}
 	}
 }
 
