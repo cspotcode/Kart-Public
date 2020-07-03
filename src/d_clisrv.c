@@ -1242,12 +1242,12 @@ static inline void CL_DrawConnectionStatus(void)
 			
 			// Loading progress
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP, "Loading server addons...");
-			totalfileslength = (INT32)((loadcompletednum/(double)(fileneedednum+1)) * 256);
+			totalfileslength = (INT32)((loadcompletednum/(double)(fileneedednum)) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
 			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
 			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 160);
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
-				va(" %2u/%2u Files",loadcompletednum,fileneedednum+1));
+				va(" %2u/%2u Files",loadcompletednum,fileneedednum));
 		}
 		else if (lastfilenum != -1)
 		{
@@ -2018,7 +2018,7 @@ void CL_UpdateServerList(boolean internetsearch, INT32 room)
 static boolean CL_FinishedFileList(void)
 {
 	INT32 i;
-	CONS_Printf(M_GetText("Checking files...\n"));
+	//CONS_Printf(M_GetText("Checking files...\n"));
 	i = CL_CheckFiles();
 	if (i == 4) // still checking ...
 	{
