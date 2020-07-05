@@ -577,9 +577,10 @@ static void D_Display(void)
 		if (cv_renderstats.value)
 		{
 			char s[50];
-			int frametime = I_GetTimeMicros() - rs_prevframetime;
+			int currenttime = I_GetTimeMicros();
+			int frametime = currenttime - rs_prevframetime;
 			int divisor = 1;
-			rs_prevframetime = I_GetTimeMicros();
+			rs_prevframetime = currenttime;
 
 // currently on Unix SDL_GetTicks is used so the values will always be multiples of 1000
 #if defined (_WIN32)
