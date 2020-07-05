@@ -2943,8 +2943,7 @@ static p_timeGetTime pfntimeGetTime = NULL;
 // but lower precision on Windows NT
 // ---------
 
-DWORD TimeFunction(int requested_frequency);
-DWORD TimeFunction(int requested_frequency)
+static DWORD TimeFunction(int requested_frequency)
 {
 	DWORD newtics = 0;
 	// this var acts as a multiplier if sub-millisecond precision is asked but is not available
@@ -3010,8 +3009,7 @@ static void I_ShutdownTimer(void)
 // I_GetTime
 // returns time in 1/TICRATE second tics
 //
-int TimeFunction(int requested_frequency);
-int TimeFunction(int requested_frequency)
+static int TimeFunction(int requested_frequency)
 {
 	static Uint64 basetime = 0;
 		   Uint64 ticks = SDL_GetTicks();
