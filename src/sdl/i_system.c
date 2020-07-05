@@ -52,9 +52,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 #if defined (__unix__) || defined (UNIXCOMMON)
 #include <fcntl.h>
-#ifndef __MACH__
-#include <time.h>
-#endif/*__MACH__*/
 #endif
 
 #include <stdio.h>
@@ -3119,10 +3116,6 @@ void I_StartupTimer(void)
 		pfntimeGetTime = (p_timeGetTime)(LPVOID)GetProcAddress(winmm, "timeGetTime");
 	}
 	I_AddExitFunc(I_ShutdownTimer);
-#else
-#if !defined(SDLTICKS) && !defined(__MACH__)
-	clock_gettime(CLOCK_MONOTONIC, &clk_basetime);
-#endif/*!SDLTICKS && !__MACH__*/
 #endif/*_WIN32*/
 }
 
