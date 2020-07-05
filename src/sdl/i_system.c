@@ -52,9 +52,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 #if defined (__unix__) || defined (UNIXCOMMON)
 #include <fcntl.h>
-#ifndef __MACH__
-#include <time.h>
-#endif/*__MACH__*/
 #endif
 
 #include <stdio.h>
@@ -2999,7 +2996,6 @@ static void I_ShutdownTimer(void)
 }
 #else
 
-#if defined(SDLTICKS) || defined(__MACH__)
 static int TimeMillis(void)
 {
 	static Uint64 basetime = 0;
@@ -3012,26 +3008,6 @@ static int TimeMillis(void)
 
 	return (int)ticks;
 }
-#else
-
-struct timespec clk_basetime;
-
-static int TimeMillis(void)
-{
-	struct timespec ts;
-	int ms;
-
-	/* clock_gettime won't fail if its arguments are correct */
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-
-	/* nanoseconds to milliseconds */
-	ms  = ( ts.tv_nsec - clk_basetime.tv_nsec )/ 1000000;
-	ms +=   ts.tv_sec  * 1000;
-
-	return ms;
-}
-
-#endif/*SDLTICKS || __MACH__*/
 
 #endif
 
@@ -3083,10 +3059,6 @@ void I_StartupTimer(void)
 		pfntimeGetTime = (p_timeGetTime)(LPVOID)GetProcAddress(winmm, "timeGetTime");
 	}
 	I_AddExitFunc(I_ShutdownTimer);
-#else
-#if !defined(SDLTICKS) && !defined(__MACH__)
-	clock_gettime(CLOCK_MONOTONIC, &clk_basetime);
-#endif/*!SDLTICKS && !__MACH__*/
 #endif/*_WIN32*/
 }
 
