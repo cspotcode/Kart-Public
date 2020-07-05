@@ -582,12 +582,9 @@ static void D_Display(void)
 			int divisor = 1;
 			rs_prevframetime = currenttime;
 
-// currently on Unix SDL_GetTicks is used so the values will always be multiples of 1000
-#if defined (_WIN32)
 			if (rs_rendercalltime > 10000)
-#endif
 				divisor = 1000;
-			
+
 			snprintf(s, sizeof s - 1, "ft   %d", frametime / divisor);
 			V_DrawThinString(30, 10, V_MONOSPACE | V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "rtot %d", rs_rendercalltime / divisor);

@@ -3005,28 +3005,23 @@ static void I_ShutdownTimer(void)
 	}
 }
 #else
+
+UINT64 sdl_performance_count_base;
+double sdl_performance_count_frequency;
+
+static int TimeFunction(int requested_frequency)
+{
+	UINT64 delta_time = SDL_GetPerformanceCounter() - sdl_performance_count_base;
+	double frequency_ratio = requested_frequency / sdl_performance_count_frequency;
+
+	return delta_time * frequency_ratio;
+}
+#endif
+
 //
 // I_GetTime
 // returns time in 1/TICRATE second tics
 //
-static int TimeFunction(int requested_frequency)
-{
-	static Uint64 basetime = 0;
-		   Uint64 ticks = SDL_GetTicks();
-
-	if (!basetime)
-		basetime = ticks;
-
-	ticks -= basetime;
-
-	ticks = (ticks*requested_frequency);
-
-	ticks = (ticks/1000);
-
-	return (tic_t)ticks;
-}
-#endif
-
 tic_t I_GetTime(void)
 {
 	return TimeFunction(NEWTICRATE);
@@ -3058,6 +3053,9 @@ void I_StartupTimer(void)
 		pfntimeGetTime = (p_timeGetTime)(LPVOID)GetProcAddress(winmm, "timeGetTime");
 	}
 	I_AddExitFunc(I_ShutdownTimer);
+#else
+	sdl_performance_count_base = SDL_GetPerformanceCounter();
+	sdl_performance_count_frequency = SDL_GetPerformanceFrequency();
 #endif
 }
 
