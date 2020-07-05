@@ -541,6 +541,8 @@ static boolean gl_shaderprogramchanged = true;
 
 static boolean gl_batching = false;// are we currently collecting batches?
 
+static INT32 gl_enable_screen_textures = 1;
+
 // 13062019
 typedef enum
 {
@@ -2660,6 +2662,10 @@ EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value)
 				Flush(); //??? if we want to change filter mode by texture, remove this
 			break;
 
+		case HWD_SET_SCREEN_TEXTURES:
+			gl_enable_screen_textures = Value;
+			break;
+
 		default:
 			break;
 	}
@@ -3162,6 +3168,8 @@ EXPORT void HWRAPI(PostImgRedraw) (float points[SCREENVERTS][SCREENVERTS][2])
 		16.0f, -16.0f, 6.0f
 	};
 
+	if (!gl_enable_screen_textures) return;
+
 	// Use a power of two texture
 	if(screen_width <= 1024)
 		texsize = 1024;
@@ -3444,6 +3452,8 @@ EXPORT void HWRAPI(MakeScreenTexture) (void)
 	INT32 texsize = 2048;
 	boolean firstTime = (screentexture == 0);
 
+	if (!gl_enable_screen_textures) return;
+
 	// Use a power of two texture, dammit
 	if(screen_width <= 512)
 		texsize = 512;
@@ -3473,6 +3483,8 @@ EXPORT void HWRAPI(MakeScreenFinalTexture) (void)
 {
 	INT32 texsize = 2048;
 	boolean firstTime = (finalScreenTexture == 0);
+
+	if (!gl_enable_screen_textures) return;
 
 	// Use a power of two texture, dammit
 	if(screen_width <= 512)
@@ -3509,6 +3521,8 @@ EXPORT void HWRAPI(DrawScreenFinalTexture)(int width, int height)
 
 	float off[12];
 	float fix[8];
+
+	if (!gl_enable_screen_textures) return;
 
 	if(screen_width <= 1024)
 		texsize = 1024;
