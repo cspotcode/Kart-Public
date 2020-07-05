@@ -59,6 +59,7 @@ struct hwdriver_s hwdriver;
 
 static void CV_filtermode_ONChange(void);
 static void CV_anisotropic_ONChange(void);
+static void CV_screentextures_ONChange(void);
 
 static CV_PossibleValue_t grfiltermode_cons_t[]= {{HWD_SET_TEXTUREFILTER_POINTSAMPLED, "Nearest"},
 	{HWD_SET_TEXTUREFILTER_BILINEAR, "Bilinear"}, {HWD_SET_TEXTUREFILTER_TRILINEAR, "Trilinear"},
@@ -82,6 +83,15 @@ consvar_t cv_grbatching = {"gr_batching", "On", 0, CV_OnOff, NULL, 0, NULL, NULL
 
 consvar_t cv_kodahack = {"kodahack", "0", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+// The current screen texture implementation is inefficient and disabling it can result in significant
+// performance gains on lower end hardware. The game is still quite playable without this functionality.
+// Features that break when disabling this:
+//  - water and heat wave effects
+//  - intermission background
+//  - full screen scaling (use native resolution or windowed mode to avoid this)
+consvar_t cv_grscreentextures = {"gr_screentextures", "On", CV_CALL, CV_OnOff,
+                                 CV_screentextures_ONChange, 0, NULL, NULL, 0, 0, NULL};
+
 static void CV_filtermode_ONChange(void)
 {
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREFILTERMODE, cv_grfiltermode.value);
@@ -90,6 +100,11 @@ static void CV_filtermode_ONChange(void)
 static void CV_anisotropic_ONChange(void)
 {
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_granisotropicmode.value);
+}
+
+static void CV_screentextures_ONChange(void)
+{
+	HWD.pfnSetSpecialState(HWD_SET_SCREEN_TEXTURES, cv_grscreentextures.value);
 }
 
 // ==========================================================================
@@ -4884,6 +4899,7 @@ void HWR_AddCommands(void)
 
 	CV_RegisterVar(&cv_grbatching);
 	CV_RegisterVar(&cv_kodahack);
+	CV_RegisterVar(&cv_grscreentextures);
 }
 
 // --------------------------------------------------------------------------
@@ -5025,6 +5041,9 @@ void HWR_DoPostProcessor(player_t *player)
 
 		HWD.pfnDrawPolygon(&Surf, v, 4, PF_Modulated|PF_Translucent|PF_NoTexture|PF_NoDepthTest);
 	}
+
+	if (!cv_grscreentextures.value) // screen textures are needed for the rest of the effects
+		return;
 
 	// Capture the screen for intermission and screen waving
 	if(gamestate != GS_INTERMISSION)
