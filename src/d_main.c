@@ -591,16 +591,14 @@ static boolean D_Display(void)
 		if (cv_renderstats.value)
 		{
 			char s[50];
-			int frametime = I_GetTimeMicros() - rs_prevframetime;
+			int currenttime = I_GetTimeMicros();
+			int frametime = currenttime - rs_prevframetime;
 			int divisor = 1;
-			rs_prevframetime = I_GetTimeMicros();
+			rs_prevframetime = currenttime;
 
-// do we have microsecond accuracy available?
-#if defined (_WIN32) || (!defined (SDLTICKS) && !defined(__MACH__))
 			if (rs_rendercalltime > 10000)
-#endif
 				divisor = 1000;
-			
+
 			snprintf(s, sizeof s - 1, "ft   %d", frametime / divisor);
 			V_DrawThinString(30, 10, V_MONOSPACE | V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "rtot %d", rs_rendercalltime / divisor);
