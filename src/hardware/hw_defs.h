@@ -246,6 +246,8 @@ enum hwdsetspecialstate
 	HWD_SET_TEXTUREFILTERMODE,
 	HWD_SET_TEXTUREANISOTROPICMODE,
 
+	HWD_SET_SCREEN_TEXTURES,
+
 	HWD_NUMSTATE
 };
 typedef enum hwdsetspecialstate hwdspecialstate_t;
