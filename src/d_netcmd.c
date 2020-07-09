@@ -431,6 +431,9 @@ consvar_t cv_allowexitlevel = {"allowexitlevel", "No", CV_NETVAR, CV_YesNo, NULL
 
 consvar_t cv_killingdead = {"killingdead", "Off", CV_NETVAR|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+static CV_PossibleValue_t mapmemory_cons_t[] = {{1, "MIN"}, {NUMMAPS-4, "MAX"}, {0, "Off"}, {0, NULL}};
+consvar_t cv_mapmemory = {"kartmapmemory", "Off", CV_NETVAR, mapmemory_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 consvar_t cv_netstat = {"netstat", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL}; // show bandwidth statistics
 static CV_PossibleValue_t nettimeout_cons_t[] = {{TICRATE/7, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
 consvar_t cv_nettimeout = {"nettimeout", "105", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange, 0, NULL, NULL, 0, 0, NULL};
@@ -676,6 +679,7 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_ingamecap);
 	CV_RegisterVar(&cv_respawntime);
 	CV_RegisterVar(&cv_killingdead);
+	CV_RegisterVar(&cv_mapmemory);
 
 	// d_clisrv
 	CV_RegisterVar(&cv_maxplayers);

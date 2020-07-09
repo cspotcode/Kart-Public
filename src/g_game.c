@@ -261,6 +261,7 @@ boolean comeback; // Battle Mode's karma comeback is on/off
 INT16 votelevels[5][2]; // Levels that were rolled by the host
 SINT8 votes[MAXPLAYERS]; // Each player's vote
 SINT8 pickedvote; // What vote the host rolls
+INT16 mapmemory[NUMMAPS]; //recently played maps
 
 // Server-sided, synched variables
 SINT8 battlewanted[4]; // WANTED players in battle, worth x2 points
@@ -3558,6 +3559,9 @@ tryagain:
 		if (!mapheaderinfo[ix])
 			continue;
 
+		if (mapmemory[ix]) // Map was played recently, lets not have it show up again so soon
+			continue;
+
 		if ((mapheaderinfo[ix]->typeoflevel & tolflags) != tolflags
 			|| ix == pprevmap
 			|| (!dedicated && M_MapLocked(ix+1))
@@ -4683,6 +4687,13 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 
 	if (netgame)
 	{
+		//decrement all map memory counters, now that we are changing map
+		for (i = 0; i < NUMMAPS; ++i)
+		{
+			mapmemory[i] = max(0, mapmemory[i]-1);
+		}
+		mapmemory[gamemap-1] = cv_mapmemory.value; //Set the new map's memory counter to the configured value
+
 		char *title = G_BuildMapTitle(gamemap);
 
 		CON_LogMessage(va(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap)));
