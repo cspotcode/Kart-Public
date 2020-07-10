@@ -1255,6 +1255,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,	NULL,	"Frame Interpolation",	&cv_interpolationmode,	100},
 	{IT_STRING | IT_CVAR,	NULL,	"Max Level Framerate",	&cv_frameratecap,		110},
 	{IT_STRING | IT_CVAR,	NULL,	"Future Sight",			&cv_extrapolation,		120},
+	{IT_STRING | IT_CVAR,   NULL,   "Drift spark pulse size",&cv_driftsparkpulse,   130},
 
 #ifdef HWRENDER
 	{IT_SUBMENU|IT_STRING,	NULL,	"OpenGL Options...",	&OP_OpenGLOptionsDef,   155},
@@ -1278,6 +1279,7 @@ enum
 	op_video_interpolationmode,
 	op_video_frameratecap,
 	op_video_extrapolation,
+	op_video_driftsparkpulse,
 #ifdef HWRENDER
 	op_video_ogl,
 #endif
