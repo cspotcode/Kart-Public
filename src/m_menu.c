@@ -1244,9 +1244,10 @@ static menuitem_t OP_VideoOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR,	NULL,	"Show FPS",				&cv_ticrate,			 90},
 	{IT_STRING | IT_CVAR,	NULL,	"Vertical Sync",		&cv_vidwait,			100},
+	{IT_STRING | IT_CVAR,   NULL,   "Drift spark pulse size",&cv_driftsparkpulse,   110},
 
 #ifdef HWRENDER
-	{IT_SUBMENU|IT_STRING,	NULL,	"OpenGL Options...",	&OP_OpenGLOptionsDef,	120},
+	{IT_SUBMENU|IT_STRING,	NULL,	"OpenGL Options...",	&OP_OpenGLOptionsDef,	130},
 #endif
 };
 
@@ -1264,6 +1265,7 @@ enum
 	op_video_fov,
 	op_video_fps,
 	op_video_vsync,
+	op_video_driftsparkpulse,
 #ifdef HWRENDER
 	op_video_ogl,
 #endif
@@ -1421,9 +1423,7 @@ static menuitem_t OP_HUDOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR, NULL,	"Console Text Size",		&cv_constextsize,		120},
 
-	{IT_STRING | IT_CVAR, NULL,   "Show \"FOCUS LOST\"",  &cv_showfocuslost,   135},
-
-	{IT_STRING | IT_CVAR, NULL,   "Drift spark pulse size",  &cv_driftsparkpulse,   150},
+	{IT_STRING | IT_CVAR, NULL,   "Show \"FOCUS LOST\"",  &cv_showfocuslost,   135}
 };
 
 // Ok it's still called chatoptions but we'll put ping display in here to be clean
