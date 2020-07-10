@@ -7695,7 +7695,7 @@ static void K_drawKartSpeedometer(void)
 		if (stplyr->mo) 
 		{
 			convSpeed = (FixedDiv(stplyr->speed, K_GetKartSpeed(stplyr, false))*100)/FRACUNIT;
-			V_DrawKartString(SPDM_X, SPDM_Y, V_HUDTRANS|splitflags, va("%4d%%", convSpeed));
+			V_DrawKartString(SPDM_X, SPDM_Y, V_HUDTRANS|splitflags, va("%4d P", convSpeed));
 		}
 	}
 }
