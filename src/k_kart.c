@@ -7694,7 +7694,7 @@ static void K_drawKartSpeedometer(void)
 		// so can we just check if their mo is NULL????
 		if (stplyr->mo) 
 		{
-			convSpeed = (FixedDiv(stplyr->speed, K_GetKartSpeed(stplyr, false))*100)/FRACUNIT;
+			convSpeed = (FixedDiv(stplyr->speed, FixedMul(K_GetKartSpeed(stplyr, false), ORIG_FRICTION))*100)>>FRACBITS;
 			V_DrawKartString(SPDM_X, SPDM_Y, V_HUDTRANS|splitflags, va("%4d P", convSpeed));
 		}
 	}
