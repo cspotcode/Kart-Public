@@ -5327,12 +5327,12 @@ static void HandleNodeTimeouts(void)
 				Net_ConnectionTimeout(i);
 }
 
-static boolean CheckForSameCmd(UINT8 p)
+static boolean CheckForSameCmd(INT32 p)
 {
 	if (netcmds[maketic%TICQUEUE][p].buttons == netcmds[(maketic-1)%TICQUEUE][p].buttons
 		&& netcmds[maketic%TICQUEUE][p].forwardmove == netcmds[(maketic-1)%TICQUEUE][p].forwardmove
 		&& netcmds[maketic%TICQUEUE][p].sidemove == netcmds[(maketic-1)%TICQUEUE][p].sidemove
-		&& !D_GetExistingTextcmd(maketic, p) //Ensures people chatting or selecting skin and color don't get counted
+		&& !D_GetExistingTextcmd(gametic, p) //Ensures people chatting or selecting skin and color don't get counted
 		&& !(players[p].pflags & PF_WANTSTOJOIN))
 	{
 		return true;
@@ -5343,9 +5343,10 @@ static boolean CheckForSameCmd(UINT8 p)
 //note: UINT32_MAX/TICRATE is the Off value
 static void  HandleIdlePlayers()
 {
+	INT32 i;
 	if (server && !demo.playback && netgame && (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING) && !(paused || hu_resynching))
 	{
-		for (INT32 i = 0; i < MAXPLAYERS; i++)
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (!(dedicated && i == serverplayer)) //dont do anything to the dedicated playerid
 			{
