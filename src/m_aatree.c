@@ -18,9 +18,6 @@
 // according to the algorithms given on Wikipedia.
 // http://en.wikipedia.org/wiki/AA_tree
 
-// Replaced by simple array to speed up OpenGL rendering. TODO: cleaner implementation
-
-/*
 typedef struct aatree_node_s
 {
 	INT32	level;
@@ -29,41 +26,36 @@ typedef struct aatree_node_s
 
 	struct aatree_node_s *left, *right;
 } aatree_node_t;
-*/
+
 struct aatree_s
 {
-//	aatree_node_t	*root;
+	aatree_node_t	*root;
 	UINT32		flags;
-	void** array;// array replacement code marked with //
-	INT32 size;//
 };
 
-aatree_t *M_AATreeAlloc(UINT32 flags, INT32 size) // size parameter is used by the array
+aatree_t *M_AATreeAlloc(UINT32 flags)
 {
 	aatree_t *aatree = Z_Malloc(sizeof (aatree_t), PU_STATIC, NULL);
-//	aatree->root = NULL;
+	aatree->root = NULL;
 	aatree->flags = flags;
-	aatree->size = size;//
-	aatree->array = Z_Calloc(sizeof(void*) * size, PU_STATIC, NULL);//
 	return aatree;
 }
-/*
+
 static void M_AATreeFree_Node(aatree_node_t *node)
 {
 	if (node->left) M_AATreeFree_Node(node->left);
 	if (node->right) M_AATreeFree_Node(node->right);
 	Z_Free(node);
 }
-*/
+
 void M_AATreeFree(aatree_t *aatree)
 {
-//	if (aatree->root)
-//		M_AATreeFree_Node(aatree->root);
+	if (aatree->root)
+		M_AATreeFree_Node(aatree->root);
 
-	Z_Free(aatree->array);//
 	Z_Free(aatree);
 }
-/*
+
 static aatree_node_t *M_AATreeSkew(aatree_node_t *node)
 {
 	if (node && node->left && node->left->level == node->level)
@@ -132,14 +124,12 @@ static aatree_node_t *M_AATreeSet_Node(aatree_node_t *node, UINT32 flags, INT32 
 
 	return node;
 }
-*/
+
 void M_AATreeSet(aatree_t *aatree, INT32 key, void* value)
 {
-//	aatree->root = M_AATreeSet_Node(aatree->root, aatree->flags, key, value);
-	if (value && (aatree->flags & AATREE_ZUSER)) Z_SetUser(value, &aatree->array[key]);//
-	else aatree->array[key] = value;//
+	aatree->root = M_AATreeSet_Node(aatree->root, aatree->flags, key, value);
 }
-/*
+
 // Caveat: we don't distinguish between nodes that don't exists
 // and nodes with value == NULL.
 static void *M_AATreeGet_Node(aatree_node_t *node, INT32 key)
@@ -156,27 +146,22 @@ static void *M_AATreeGet_Node(aatree_node_t *node, INT32 key)
 
 	return NULL;
 }
-*/
+
 void *M_AATreeGet(aatree_t *aatree, INT32 key)
 {
-//	return M_AATreeGet_Node(aatree->root, key);
-	return aatree->array[key];//
+	return M_AATreeGet_Node(aatree->root, key);
 }
 
-/*
+
 static void M_AATreeIterate_Node(aatree_node_t *node, aatree_iter_t callback)
 {
 	if (node->left) M_AATreeIterate_Node(node->left, callback);
 	callback(node->key, node->value);
 	if (node->right) M_AATreeIterate_Node(node->right, callback);
 }
-*/
+
 void M_AATreeIterate(aatree_t *aatree, aatree_iter_t callback)
 {
-//	if (aatree->root)
-//		M_AATreeIterate_Node(aatree->root, callback);
-	for (INT32 i = 0; i < aatree->size; i++)//
-	{//
-		if (aatree->array[i]) callback(i, aatree->array[i]);//
-	}//
+	if (aatree->root)
+		M_AATreeIterate_Node(aatree->root, callback);
 }

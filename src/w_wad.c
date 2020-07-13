@@ -754,8 +754,7 @@ UINT16 W_InitFile(const char *filename)
 
 #ifdef HWRENDER
 	// allocates GLPatch info structures and store them in a tree
-	// ..not. The underlying code has been modified to use a simple array to speed up OpenGL rendering.
-	wadfile->hwrcache = M_AATreeAlloc(AATREE_ZUSER, numlumps);
+	wadfile->hwrcache = M_AATreeAlloc(AATREE_ZUSER);
 #endif
 
 	//
