@@ -143,7 +143,7 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 	char wadfilename[MAX_WADPATH] = "";
 	UINT8 filestatus;
 
-	for (i = mainwads+1; i < numwadfiles; i++) //mainwads+1, otherwise we start on the first mainwad
+	for (i = mainwads; i < numwadfiles; i++) //mainwads+1, otherwise we start on the first mainwad
 	{
 		// If it has only music/sound lumps, don't put it in the list
 		if (!wadfiles[i]->important)
@@ -477,7 +477,7 @@ boolean CL_LoadServerFiles(void)
 //	if (M_CheckParm("-nofiles"))
 //		return;
 
-	for (i = 0; i < fileneedednum; i++)
+	for (i = 1; i < fileneedednum; i++)
 	{
 		if (fileneeded[i].status == FS_OPEN)
 			continue; // Already loaded
