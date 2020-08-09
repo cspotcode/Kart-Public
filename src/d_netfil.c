@@ -381,7 +381,6 @@ INT32 CL_CheckFiles(void)
 {
 	INT32 i, j;
 	char wadfilename[MAX_WADPATH];
-	INT32 ret = 1;
 	size_t packetsize = 0;
 	size_t filestoload = 0;
 	boolean downloadrequired = false;
@@ -478,7 +477,7 @@ boolean CL_LoadServerFiles(void)
 //	if (M_CheckParm("-nofiles"))
 //		return;
 
-	for (i = 1; i < fileneedednum; i++)
+	for (i = 0; i < fileneedednum; i++)
 	{
 		if (fileneeded[i].status == FS_OPEN)
 			continue; // Already loaded
