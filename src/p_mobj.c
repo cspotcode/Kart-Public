@@ -8321,7 +8321,18 @@ void P_MobjThinker(mobj_t *mobj)
 
 				if (!mobj->extravalue2)
 				{
-					K_DropRocketSneaker(mobj->target->player);
+					if (mobj->eflags & MFE_VERTICALFLIP)
+						mobj->z -= mobj->height;
+					else
+						mobj->z += mobj->height;
+
+					S_StartSound(mobj, mobj->info->deathsound);
+					P_SetObjectMomZ(mobj, 8*FRACUNIT, false);
+					P_InstaThrust(mobj, R_PointToAngle2(mobj->target->x, mobj->target->y, mobj->x, mobj->y)+ANGLE_90, 16*FRACUNIT);
+					mobj->momx += mobj->target->momx;
+					mobj->momy += mobj->target->momy;
+					mobj->momz += mobj->target->momz;
+					mobj->extravalue2 = 1;
 				}
 				else if (P_IsObjectOnGround(mobj))
 				{
