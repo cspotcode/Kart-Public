@@ -25,15 +25,28 @@ Documentation available here.
 #include "i_tcp.h"/* for current_port */
 #include "i_threads.h"
 
+/* reasonable default I guess?? */
+#define DEFAULT_BUFFER_SIZE (4096)
+
 /* I just stop myself from making macros anymore. */
 #define Blame( ... ) \
 	CONS_Printf("\x85" __VA_ARGS__)
 
 static void MasterServer_Debug_OnChange (void);
 
+consvar_t cv_masterserver_timeout = {
+	"masterserver_timeout", "5", CV_SAVE, CV_Unsigned,
+	NULL, 0, NULL, NULL, 0, 0, NULL/* C90 moment */
+};
+
 consvar_t cv_masterserver_debug = {
 	"masterserver_debug", "Off", CV_SAVE|CV_CALL, CV_OnOff,
 	MasterServer_Debug_OnChange, 0, NULL, NULL, 0, 0, NULL/* C90 moment */
+};
+
+consvar_t cv_masterserver_token = {
+	"masterserver_token", "", CV_SAVE, NULL,
+	NULL, 0, NULL, NULL, 0, 0, NULL/* C90 moment */
 };
 
 static int hms_started;
@@ -65,16 +78,25 @@ static size_t
 HMS_on_read (char *s, size_t _1, size_t n, void *userdata)
 {
 	struct HMS_buffer *buffer;
+	size_t blocks;
+
 	(void)_1;
+
 	buffer = userdata;
-	if (n < (size_t)( buffer->end - buffer->needle ))
+
+	if (n >= (size_t)( buffer->end - buffer->needle ))
 	{
-		memcpy(&buffer->buffer[buffer->needle], s, n);
-		buffer->needle += n;
-		return n;
+		/* resize to next multiple of buffer size */
+		blocks = ( n / DEFAULT_BUFFER_SIZE + 1 );
+		buffer->end += ( blocks * DEFAULT_BUFFER_SIZE );
+
+		buffer->buffer = realloc(buffer->buffer, buffer->end);
 	}
-	else
-		return 0;
+
+	memcpy(&buffer->buffer[buffer->needle], s, n);
+	buffer->needle += n;
+
+	return n;
 }
 
 static struct HMS_buffer *
@@ -83,7 +105,9 @@ HMS_connect (const char *format, ...)
 	va_list ap;
 	CURL *curl;
 	char *url;
+	char *quack_token;
 	size_t seek;
+	size_t token_length;
 	struct HMS_buffer *buffer;
 
 	if (! hms_started)
@@ -110,6 +134,17 @@ HMS_connect (const char *format, ...)
 		return NULL;
 	}
 
+	if (cv_masterserver_token.string[0])
+	{
+		quack_token = curl_easy_escape(curl, cv_masterserver_token.string, 0);
+		token_length = ( sizeof "?token="-1 )+ strlen(quack_token);
+	}
+	else
+	{
+		quack_token = NULL;
+		token_length = 0;
+	}
+
 #ifdef HAVE_THREADS
 	I_lock_mutex(&hms_api_mutex);
 #endif
@@ -117,7 +152,7 @@ HMS_connect (const char *format, ...)
 	seek = strlen(hms_api) + 1;/* + '/' */
 
 	va_start (ap, format);
-	url = malloc(seek + vsnprintf(0, 0, format, ap) + 1);
+	url = malloc(seek + vsnprintf(0, 0, format, ap) + token_length + 1);
 	va_end (ap);
 
 	sprintf(url, "%s/", hms_api);
@@ -127,15 +162,17 @@ HMS_connect (const char *format, ...)
 #endif
 
 	va_start (ap, format);
-	vsprintf(&url[seek], format, ap);
+	seek += vsprintf(&url[seek], format, ap);
 	va_end (ap);
+
+	if (quack_token)
+		sprintf(&url[seek], "?token=%s", quack_token);
 
 	CONS_Printf("HMS: connecting '%s'...\n", url);
 
 	buffer = malloc(sizeof *buffer);
 	buffer->curl = curl;
-	/* I just allocated 4k and fuck it! */
-	buffer->end = 4096;
+	buffer->end = DEFAULT_BUFFER_SIZE;
 	buffer->buffer = malloc(buffer->end);
 	buffer->needle = 0;
 
@@ -154,9 +191,11 @@ HMS_connect (const char *format, ...)
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, cv_masterserver_timeout.value);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, HMS_on_read);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, buffer);
 
+	curl_free(quack_token);
 	free(url);
 
 	return buffer;
