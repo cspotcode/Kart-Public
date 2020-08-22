@@ -298,7 +298,7 @@ OPTS += -DCOMPVERSION
 
 ifndef NONX86
 ifndef GCC29
-	ARCHOPTS?=-march=pentium
+	ARCHOPTS?=-msse2
 else
 	ARCHOPTS?=-mpentium
 endif
