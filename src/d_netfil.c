@@ -109,7 +109,9 @@ char downloaddir[512] = "DOWNLOAD";
 // for cl loading screen
 INT32 lastfilenum = -1;
 INT32 downloadcompletednum = 0;
+UINT32 downloadcompletedsize = 0;
 INT32 totalfilesrequestednum = 0;
+UINT32 totalfilesrequestedsize = 0;
 #endif
 
 #ifdef HAVE_CURL
@@ -332,7 +334,6 @@ boolean CL_SendRequestFile(void)
 			// put it in download dir
 			strcatbf(fileneeded[i].filename, downloaddir, "/");
 			fileneeded[i].status = FS_REQUESTED;
-			totalfilesrequestednum++;
 		}
 	WRITEUINT8(p, 0xFF);
 	I_GetDiskFreeSpace(&availablefreespace);
@@ -400,7 +401,7 @@ INT32 CL_CheckFiles(void)
 	if (modifiedgame)
 	{
 		CONS_Debug(DBG_NETPLAY, "game is modified; only doing basic checks\n");
-		for (i = 0, j = mainwads; i < fileneedednum || j < numwadfiles;)
+		for (i = 0, j = mainwads+1; i < fileneedednum || j < numwadfiles;)
 		{
 			if (j < numwadfiles && !wadfiles[j]->important)
 			{
@@ -429,7 +430,7 @@ INT32 CL_CheckFiles(void)
 
 	for (i = 0; i < fileneedednum; i++)
 	{
-		if (fileneeded[i].status == FS_NOTFOUND)
+		if (fileneeded[i].status == FS_NOTFOUND || fileneeded[i].status == FS_FALLBACK)
 			downloadrequired = true;
 		
 		if (fileneeded[i].status == FS_FOUND || fileneeded[i].status == FS_NOTFOUND)
@@ -441,7 +442,7 @@ INT32 CL_CheckFiles(void)
 		CONS_Debug(DBG_NETPLAY, "searching for '%s' ", fileneeded[i].filename);
 
 		// Check in already loaded files
-		for (j = mainwads; wadfiles[j]; j++)
+		for (j = mainwads+1; wadfiles[j]; j++)
 		{
 			nameonly(strcpy(wadfilename, wadfiles[j]->filename));
 			if (!stricmp(wadfilename, fileneeded[i].filename) &&
@@ -873,7 +874,10 @@ void Got_Filetxpak(void)
 			file->status = FS_FOUND;
 			CONS_Printf(M_GetText("Downloading %s...(done)\n"),
 				filename);
+#ifndef NONET
 			downloadcompletednum++;
+			downloadcompletedsize += file->totalsize;
+#endif
 		}
 	}
 	else
@@ -1186,6 +1190,7 @@ void CURLGetFile(void)
 				nameonly(curl_realname);
 				CONS_Printf(M_GetText("Finished downloading %s\n"), curl_realname);
 				downloadcompletednum++;
+				downloadcompletedsize += curl_curfile->totalsize;
 				curl_curfile->status = FS_FOUND;
 				fclose(curl_curfile->file);
 			}
