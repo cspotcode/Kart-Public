@@ -30,7 +30,6 @@
 #ifdef HAVE_MIXER
     //#if !defined(DC) && !defined(_WIN32_WCE) && !defined(_XBOX) && !defined(GP2X)
     #define SOUND SOUND_MIXER
-    #define NOHS // No HW3SOUND
     #ifdef HW3SOUND
     #undef HW3SOUND
     #endif
@@ -47,7 +46,6 @@
 // Use FMOD?
 #ifdef HAVE_FMOD
     #define SOUND SOUND_FMOD
-    #define NOHS // No HW3SOUND
     #ifdef HW3SOUND
     #undef HW3SOUND
     #endif
@@ -63,10 +61,6 @@
 #define NONET
 #if !defined (HWRENDER) && !defined (NOHW)
 #define HWRENDER
-#endif
-// judgecutor: 3D sound support
-#if !defined(HW3SOUND) && !defined (NOHS)
-#define HW3SOUND
 #endif
 #endif
 
@@ -606,11 +600,9 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Kalaron/Eternity Engine slope code (SRB2CB ported)
 #define ESLOPE
 
-#ifdef ESLOPE
 /// Backwards compatibility with SRB2CB's slope linedef types.
 ///	\note	A simple shim that prints a warning.
 #define ESLOPE_TYPESHIM
-#endif
 
 ///	Delete file while the game is running.
 ///	\note	EXTREMELY buggy, tends to crash game.
@@ -681,7 +673,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Hardware renderer: OpenGL
 #define GL_SHADERS
 
-#ifdef HAVE_CURL
+#if defined (HAVE_CURL) && ! defined (NONET)
 #define MASTERSERVER
 #else
 #undef UPDATE_ALERT

@@ -7166,6 +7166,7 @@ void G_DoPlayDemo(char *defdemoname)
 		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
 		Z_Free(demobuffer);
+		demobuffer = NULL;
 		demo.playback = false;
 		demo.title = false;
 		return;
@@ -7194,6 +7195,7 @@ void G_DoPlayDemo(char *defdemoname)
 		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
 		Z_Free(demobuffer);
+		demobuffer = NULL;
 		demo.playback = false;
 		demo.title = false;
 		return;
@@ -7206,6 +7208,7 @@ void G_DoPlayDemo(char *defdemoname)
 		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
 		Z_Free(demobuffer);
+		demobuffer = NULL;
 		demo.playback = false;
 		demo.title = false;
 		return;
@@ -7225,6 +7228,7 @@ void G_DoPlayDemo(char *defdemoname)
 			M_StartMessage(msg, NULL, MM_NOTHING);
 			Z_Free(pdemoname);
 			Z_Free(demobuffer);
+			demobuffer = NULL;
 			demo.playback = false;
 			demo.title = false;
 			return;
@@ -7285,6 +7289,7 @@ void G_DoPlayDemo(char *defdemoname)
 				M_StartMessage(msg, NULL, MM_NOTHING);
 			Z_Free(pdemoname);
 			Z_Free(demobuffer);
+			demobuffer = NULL;
 			demo.playback = false;
 			demo.title = false;
 			return;
@@ -7355,6 +7360,7 @@ void G_DoPlayDemo(char *defdemoname)
 			M_StartMessage(msg, NULL, MM_NOTHING);
 			Z_Free(pdemoname);
 			Z_Free(demobuffer);
+			demobuffer = NULL;
 			demo.playback = false;
 			demo.title = false;
 			return;
@@ -7368,6 +7374,7 @@ void G_DoPlayDemo(char *defdemoname)
 			M_StartMessage(msg, NULL, MM_NOTHING);
 			Z_Free(pdemoname);
 			Z_Free(demobuffer);
+			demobuffer = NULL;
 			demo.playback = false;
 			demo.title = false;
 			return;
@@ -7392,6 +7399,7 @@ void G_DoPlayDemo(char *defdemoname)
 			M_StartMessage(msg, NULL, MM_NOTHING);
 			Z_Free(pdemoname);
 			Z_Free(demobuffer);
+			demobuffer = NULL;
 			demo.playback = false;
 			demo.title = false;
 			return;
@@ -7435,6 +7443,7 @@ void G_DoPlayDemo(char *defdemoname)
 		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
 		Z_Free(demobuffer);
+		demobuffer = NULL;
 		demo.playback = false;
 		demo.title = false;
 		return;
@@ -7490,6 +7499,7 @@ void G_DoPlayDemo(char *defdemoname)
 				M_StartMessage(msg, NULL, MM_NOTHING);
 				Z_Free(pdemoname);
 				Z_Free(demobuffer);
+				demobuffer = NULL;
 				demo.playback = false;
 				demo.title = false;
 				return;
@@ -7504,6 +7514,7 @@ void G_DoPlayDemo(char *defdemoname)
 			M_StartMessage(msg, NULL, MM_NOTHING);
 			Z_Free(pdemoname);
 			Z_Free(demobuffer);
+			demobuffer = NULL;
 			demo.playback = false;
 			demo.title = false;
 			return;
