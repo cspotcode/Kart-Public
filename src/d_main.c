@@ -896,7 +896,10 @@ void D_SRB2Loop(void)
 #endif
 
 #ifdef HAVE_DISCORDRPC
-		Discord_RunCallbacks();
+		if (! dedicated)
+		{
+			Discord_RunCallbacks();
+		}
 #endif
 	}
 }
@@ -1764,7 +1767,10 @@ void D_SRB2Main(void)
 	}
 
 #ifdef HAVE_DISCORDRPC
-	DRPC_Init();
+	if (! dedicated)
+	{
+		DRPC_Init();
+	}
 #endif
 }
 
