@@ -59,6 +59,10 @@ char  logfilename[1024];
 #endif
 
 #if defined (_WIN32)
+#include "exchndl.h"
+#endif
+
+#if defined (_WIN32)
 #include "../win32/win_dbg.h"
 typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
 #endif
@@ -170,12 +174,9 @@ int main(int argc, char **argv)
 			)
 #endif
 		{
-			LoadLibraryA("exchndl.dll");
+			ExcHndlInit();
 		}
 	}
-#ifndef __MINGW32__
-	prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
-#endif
 	MakeCodeWritable();
 #endif
 
