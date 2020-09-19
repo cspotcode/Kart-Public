@@ -128,7 +128,9 @@ extracolormap_t extra_colormaps[MAXCOLORMAPS];
 // Render stats
 int rs_prevframetime = 0;
 int rs_rendercalltime = 0;
+int rs_uitime = 0;
 int rs_swaptime = 0;
+int rs_tictime = 0;
 
 int rs_bsptime = 0;
 

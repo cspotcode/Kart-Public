@@ -516,8 +516,14 @@ static void D_Display(void)
 			lastdraw = false;
 		}
 
+		rs_uitime = I_GetTimeMicros();
+
 		ST_Drawer();
 		HU_Drawer();
+	}
+	else
+	{
+		rs_uitime = I_GetTimeMicros();
 	}
 
 	// change gamma if needed
@@ -558,6 +564,8 @@ static void D_Display(void)
 	I_unlock_mutex(m_menu_mutex);
 #endif
 	// focus lost moved to M_Drawer
+
+	rs_uitime = I_GetTimeMicros() - rs_uitime;
 
 	//
 	// wipe update
@@ -641,8 +649,12 @@ static void D_Display(void)
 				V_DrawThinString(30, 60, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "sdrw %d", rs_hw_spritedrawtime / divisor);
 				V_DrawThinString(30, 70, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "fin  %d", rs_swaptime / divisor);
+				snprintf(s, sizeof s - 1, "ui   %d", rs_uitime / divisor);
 				V_DrawThinString(30, 80, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "fin  %d", rs_swaptime / divisor);
+				V_DrawThinString(30, 90, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "tic  %d", rs_tictime / divisor);
+				V_DrawThinString(30, 105, V_MONOSPACE | V_GRAYMAP, s);
 				if (cv_grbatching.value)
 				{
 					snprintf(s, sizeof s - 1, "bsrt %d", rs_hw_batchsorttime / divisor);
@@ -674,8 +686,12 @@ static void D_Display(void)
 				V_DrawThinString(30, 50, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "mskd %d", rs_sw_maskedtime / divisor);
 				V_DrawThinString(30, 60, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "fin  %d", rs_swaptime / divisor);
+				snprintf(s, sizeof s - 1, "ui   %d", rs_uitime / divisor);
 				V_DrawThinString(30, 70, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "fin  %d", rs_swaptime / divisor);
+				V_DrawThinString(30, 80, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "tic  %d", rs_tictime / divisor);
+				V_DrawThinString(30, 95, V_MONOSPACE | V_GRAYMAP, s);
 			}
 		}
 
