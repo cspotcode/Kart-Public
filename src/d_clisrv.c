@@ -5532,6 +5532,8 @@ void TryRunTics(tic_t realtics)
 			{
 				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
 
+				rs_tictime = I_GetTimeMicros();
+
 				// frame interpolation
 				prev_tics = I_GetTime();
 
@@ -5539,6 +5541,8 @@ void TryRunTics(tic_t realtics)
 				ExtraDataTicker();
 				gametic++;
 				consistancy[gametic%TICQUEUE] = Consistancy();
+
+				rs_tictime = I_GetTimeMicros() - rs_tictime;
 
 				// Leave a certain amount of tics present in the net buffer as long as we've ran at least one tic this frame.
 				if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)
