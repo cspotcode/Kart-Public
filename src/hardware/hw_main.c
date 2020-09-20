@@ -79,6 +79,8 @@ consvar_t cv_grsolvetjoin = {"gr_solvetjoin", "On", 0, CV_OnOff, NULL, 0, NULL, 
 
 consvar_t cv_grbatching = {"gr_batching", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_grwireframe = {"gr_wireframe", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 static void CV_filtermode_ONChange(void)
 {
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREFILTERMODE, cv_grfiltermode.value);
@@ -4475,7 +4477,7 @@ void HWR_DrawSkyBackground(float fpov)
 {
 	FTransform dometransform;
 
-	if (drewsky)
+	if (drewsky || (cv_grwireframe.value && cv_debug))
 		return;
 
 	memset(&dometransform, 0x00, sizeof(FTransform));
@@ -4658,6 +4660,9 @@ void HWR_RenderFrame(INT32 viewnumber, player_t *player, boolean skybox)
 	HWD.pfnSetSpecialState(HWD_SET_SHADERS, cv_grshaders.value);
 	HWD.pfnSetShader(0);
 
+	if (cv_grwireframe.value && cv_debug)
+		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 1);
+
 	if (cv_grbatching.value)
 		HWD.pfnStartBatching();
 
@@ -4684,6 +4689,9 @@ void HWR_RenderFrame(INT32 viewnumber, player_t *player, boolean skybox)
 
 	if (numplanes || numpolyplanes || numwalls) // Render FOFs and translucent walls after everything
 		HWR_RenderDrawNodes();
+
+	if (cv_grwireframe.value && cv_debug)
+		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 0);
 
 	// Unset transform and shader
 	HWD.pfnSetTransform(NULL);
@@ -4756,6 +4764,8 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_granisotropicmode);
 	CV_RegisterVar(&cv_grcorrecttricks);
 	CV_RegisterVar(&cv_grsolvetjoin);
+
+	CV_RegisterVar(&cv_grwireframe);
 
 	CV_RegisterVar(&cv_grbatching);
 }
