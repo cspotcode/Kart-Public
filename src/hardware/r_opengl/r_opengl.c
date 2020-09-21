@@ -2671,6 +2671,7 @@ EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value)
 
 		case HWD_SET_SCREEN_TEXTURES:
 			gl_enable_screen_textures = Value;
+			break;
 
 		case HWD_SET_WIREFRAME:
 			pglPolygonMode(GL_FRONT_AND_BACK, Value ? GL_LINE : GL_FILL);
