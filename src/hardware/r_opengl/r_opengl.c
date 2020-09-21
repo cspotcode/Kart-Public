@@ -388,6 +388,9 @@ static PFNglClientActiveTexture pglClientActiveTexture;
 typedef void    (APIENTRY *PFNglColorPointer)       (GLint, GLenum, GLsizei, const GLvoid*);
 static PFNglColorPointer pglColorPointer;
 
+typedef void    (APIENTRY *PFNglPolygonMode)        (GLenum, GLenum);
+static PFNglPolygonMode pglPolygonMode;
+
 /* 1.2 Parms */
 /* GL_CLAMP_TO_EDGE_EXT */
 #ifndef GL_CLAMP_TO_EDGE
@@ -793,6 +796,7 @@ void SetupGLFunc4(void)
 	pglBufferData = GetGLFunc("glBufferData");
 	pglDeleteBuffers = GetGLFunc("glDeleteBuffers");
 	pglColorPointer = GetGLFunc("glColorPointer");
+	pglPolygonMode = GetGLFunc("glPolygonMode");
 
 #ifdef GL_SHADERS
 	pglCreateShader = GetGLFunc("glCreateShader");
@@ -2667,6 +2671,9 @@ EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value)
 
 		case HWD_SET_SCREEN_TEXTURES:
 			gl_enable_screen_textures = Value;
+
+		case HWD_SET_WIREFRAME:
+			pglPolygonMode(GL_FRONT_AND_BACK, Value ? GL_LINE : GL_FILL);
 			break;
 
 		default:
