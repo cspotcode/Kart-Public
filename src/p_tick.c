@@ -23,6 +23,8 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "k_kart.h"
+#include "m_perfstats.h"
+#include "i_system.h" // I_GetTimeMicros
 
 // Object place
 #include "m_cheat.h"
@@ -648,9 +650,11 @@ void P_Ticker(boolean run)
 #endif
 		}
 
+		ps_playerthink_time = I_GetTimeMicros();
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerThink(&players[i]);
+		ps_playerthink_time = I_GetTimeMicros() - ps_playerthink_time;
 	}
 
 	// Keep track of how long they've been playing!
@@ -665,7 +669,9 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
+		ps_thinkertime = I_GetTimeMicros();
 		P_RunThinkers();
+		ps_thinkertime = I_GetTimeMicros() - ps_thinkertime;
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -673,7 +679,9 @@ void P_Ticker(boolean run)
 				P_PlayerAfterThink(&players[i]);
 
 #ifdef HAVE_BLUA
+		ps_lua_thinkframe_time = I_GetTimeMicros();
 		LUAh_ThinkFrame();
+		ps_lua_thinkframe_time = I_GetTimeMicros() - ps_lua_thinkframe_time;
 #endif
 	}
 

@@ -15,6 +15,12 @@
 
 extern int ps_tictime;
 
+extern int ps_playerthink_time;
+extern int ps_thinkertime;
+#ifdef HAVE_BLUA
+extern int ps_lua_thinkframe_time;
+#endif
+
 void M_DrawPerfStats(void);
 
 #endif
