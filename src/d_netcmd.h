@@ -159,6 +159,8 @@ extern consvar_t cv_sleep;
 
 extern consvar_t cv_skinselect2d;
 
+extern consvar_t cv_perfstats;
+
 typedef enum
 {
 	XD_NAMEANDCOLOR = 1,

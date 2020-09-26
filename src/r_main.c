@@ -127,22 +127,21 @@ size_t num_extra_colormaps;
 extracolormap_t extra_colormaps[MAXCOLORMAPS];
 
 // Render stats
-int rs_prevframetime = 0;
-int rs_rendercalltime = 0;
-int rs_uitime = 0;
-int rs_swaptime = 0;
-int rs_tictime = 0;
+int ps_prevframetime = 0;
+int ps_rendercalltime = 0;
+int ps_uitime = 0;
+int ps_swaptime = 0;
 
-int rs_bsptime = 0;
+int ps_bsptime = 0;
 
-int rs_sw_portaltime = 0;
-int rs_sw_planetime = 0;
-int rs_sw_maskedtime = 0;
+int ps_sw_portaltime = 0;
+int ps_sw_planetime = 0;
+int ps_sw_maskedtime = 0;
 
-int rs_numbspcalls = 0;
-int rs_numsprites = 0;
-int rs_numdrawnodes = 0;
-int rs_numpolyobjects = 0;
+int ps_numbspcalls = 0;
+int ps_numsprites = 0;
+int ps_numdrawnodes = 0;
+int ps_numpolyobjects = 0;
 
 static CV_PossibleValue_t drawdist_cons_t[] = {
 	/*{256, "256"},*/	{512, "512"},	{768, "768"},
@@ -209,8 +208,6 @@ consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL|CV_SAVE, fov_cons_t, Fov_OnCha
 consvar_t cv_homremoval = {"homremoval", "Yes", CV_SAVE, homremoval_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_maxportals = {"maxportals", "2", CV_SAVE, maxportals_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-
-consvar_t cv_renderstats = {"renderstats", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 void SplitScreen_OnChange(void)
 {
@@ -1413,10 +1410,10 @@ void R_RenderPlayerView(player_t *player)
 	mytotal = 0;
 	ProfZeroTimer();
 #endif
-	rs_numbspcalls = rs_numpolyobjects = rs_numdrawnodes = 0;
-	rs_bsptime = I_GetTimeMicros();
+	ps_numbspcalls = ps_numpolyobjects = ps_numdrawnodes = 0;
+	ps_bsptime = I_GetTimeMicros();
 	R_RenderBSPNode((INT32)numnodes - 1);
-	rs_bsptime = I_GetTimeMicros() - rs_bsptime;
+	ps_bsptime = I_GetTimeMicros() - ps_bsptime;
 	R_ClipSprites();
 #ifdef TIMING
 	RDMSR(0x10, &mycount);
@@ -1427,7 +1424,7 @@ void R_RenderPlayerView(player_t *player)
 //profile stuff ---------------------------------------------------------
 
 	// PORTAL RENDERING
-	rs_sw_portaltime = I_GetTimeMicros();
+	ps_sw_portaltime = I_GetTimeMicros();
 	for(portal = portal_base; portal; portal = portal_base)
 	{
 		// render the portal
@@ -1455,20 +1452,20 @@ void R_RenderPlayerView(player_t *player)
 		Z_Free(portal->frontscale);
 		Z_Free(portal);
 	}
-	rs_sw_portaltime = I_GetTimeMicros() - rs_sw_portaltime;
+	ps_sw_portaltime = I_GetTimeMicros() - ps_sw_portaltime;
 	// END PORTAL RENDERING
 
-	rs_sw_planetime = I_GetTimeMicros();
+	ps_sw_planetime = I_GetTimeMicros();
 	R_DrawPlanes();
 #ifdef FLOORSPLATS
 	R_DrawVisibleFloorSplats();
 #endif
-	rs_sw_planetime = I_GetTimeMicros() - rs_sw_planetime;
+	ps_sw_planetime = I_GetTimeMicros() - ps_sw_planetime;
 	// draw mid texture and sprite
 	// And now 3D floors/sides!
-	rs_sw_maskedtime = I_GetTimeMicros();
+	ps_sw_maskedtime = I_GetTimeMicros();
 	R_DrawMasked();
-	rs_sw_maskedtime = I_GetTimeMicros() - rs_sw_maskedtime;
+	ps_sw_maskedtime = I_GetTimeMicros() - ps_sw_maskedtime;
 
 	// Check for new console commands.
 	NetUpdate();
@@ -1578,8 +1575,6 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_grshearing);
 	CV_RegisterVar(&cv_grshaders);
 #endif
-
-	CV_RegisterVar(&cv_renderstats);
 
 #ifdef HWRENDER
 	if (rendermode != render_soft && rendermode != render_none)

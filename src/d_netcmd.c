@@ -480,6 +480,9 @@ consvar_t cv_sleep = {"cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL, -1, NULL,
 
 consvar_t cv_skinselect2d = {"skinselect2d", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+static CV_PossibleValue_t perfstats_cons_t[] = {{0, "Off"}, {1, "Rendering"}, {2, "Logic"}, {0, NULL}};
+consvar_t cv_perfstats = {"perfstats", "Off", 0, perfstats_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 INT16 gametype = GT_RACE; // SRB2kart
 boolean forceresetplayers = false;
 boolean deferencoremode = false;
@@ -1000,6 +1003,8 @@ void D_RegisterClientCommands(void)
 
 
 	CV_RegisterVar(&cv_soundtest);
+
+	CV_RegisterVar(&cv_perfstats);
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
