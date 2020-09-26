@@ -431,7 +431,7 @@ static void D_Display(void)
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
 		{
-			rs_rendercalltime = I_GetTimeMicros();
+			ps_rendercalltime = I_GetTimeMicros();
 			for (i = 0; i <= splitscreen; i++)
 			{
 				if (players[displayplayers[i]].mo || players[displayplayers[i]].playerstate == PST_DEAD)
@@ -504,7 +504,7 @@ static void D_Display(void)
 						V_DoPostProcessor(i, postimgtype[i], postimgparam[i]);
 				}
 			}
-			rs_rendercalltime = I_GetTimeMicros() - rs_rendercalltime;
+			ps_rendercalltime = I_GetTimeMicros() - ps_rendercalltime;
 		}
 
 		if (lastdraw)
@@ -517,14 +517,14 @@ static void D_Display(void)
 			lastdraw = false;
 		}
 
-		rs_uitime = I_GetTimeMicros();
+		ps_uitime = I_GetTimeMicros();
 
 		ST_Drawer();
 		HU_Drawer();
 	}
 	else
 	{
-		rs_uitime = I_GetTimeMicros();
+		ps_uitime = I_GetTimeMicros();
 	}
 
 	// change gamma if needed
@@ -566,7 +566,7 @@ static void D_Display(void)
 #endif
 	// focus lost moved to M_Drawer
 
-	rs_uitime = I_GetTimeMicros() - rs_uitime;
+	ps_uitime = I_GetTimeMicros() - ps_uitime;
 
 	//
 	// wipe update
@@ -615,7 +615,7 @@ static void D_Display(void)
 			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
 		}
 
-		if (cv_renderstats.value)
+		if (cv_perfstats.value)
 		{
 			M_DrawPerfStats();
 		}
@@ -623,9 +623,9 @@ static void D_Display(void)
 		if (cv_shittyscreen.value)
 			V_DrawVhsEffect(cv_shittyscreen.value == 2);
 
-		rs_swaptime = I_GetTimeMicros();
+		ps_swaptime = I_GetTimeMicros();
 		I_FinishUpdate(); // page flip or blit buffer
-		rs_swaptime = I_GetTimeMicros() - rs_swaptime;
+		ps_swaptime = I_GetTimeMicros() - ps_swaptime;
 	}
 }
 

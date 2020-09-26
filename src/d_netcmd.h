@@ -151,7 +151,7 @@ extern consvar_t cv_skipmapcheck;
 
 extern consvar_t cv_sleep;
 
-extern consvar_t cv_renderstats;
+extern consvar_t cv_perfstats;
 
 typedef enum
 {
