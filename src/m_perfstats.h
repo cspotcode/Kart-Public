@@ -13,6 +13,8 @@
 #ifndef __M_PERFSTATS_H__
 #define __M_PERFSTATS_H__
 
+extern int rs_tictime;
+
 void M_DrawPerfStats(void);
 
 #endif

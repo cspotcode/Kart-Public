@@ -22,6 +22,8 @@
 #include "hardware/hw_main.h"
 #endif
 
+int rs_tictime = 0;
+
 void M_DrawPerfStats(void)
 {
 	if (cv_renderstats.value)
@@ -49,6 +51,7 @@ void M_DrawPerfStats(void)
 		V_DrawThinString(90, 30, V_MONOSPACE | V_BLUEMAP, s);
 		snprintf(s, sizeof s - 1, "plyobjs %d", rs_numpolyobjects);
 		V_DrawThinString(90, 40, V_MONOSPACE | V_BLUEMAP, s);
+#ifdef HWRENDER
 		if (rendermode == render_opengl) // OpenGL specific stats
 		{
 			snprintf(s, sizeof s - 1, "nodesrt %d", rs_hw_nodesorttime / divisor);
@@ -89,6 +92,7 @@ void M_DrawPerfStats(void)
 			}
 		}
 		else // software specific stats
+#endif
 		{
 			snprintf(s, sizeof s - 1, "portals %d", rs_sw_portaltime / divisor);
 			V_DrawThinString(24, 40, V_MONOSPACE | V_YELLOWMAP, s);

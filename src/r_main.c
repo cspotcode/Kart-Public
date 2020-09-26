@@ -130,7 +130,6 @@ int rs_prevframetime = 0;
 int rs_rendercalltime = 0;
 int rs_uitime = 0;
 int rs_swaptime = 0;
-int rs_tictime = 0;
 
 int rs_bsptime = 0;
 
@@ -208,8 +207,6 @@ consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL|CV_SAVE, fov_cons_t, Fov_OnCha
 consvar_t cv_homremoval = {"homremoval", "Yes", CV_SAVE, homremoval_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_maxportals = {"maxportals", "2", CV_SAVE, maxportals_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-
-consvar_t cv_renderstats = {"renderstats", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 void SplitScreen_OnChange(void)
 {
@@ -1591,8 +1588,6 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_grshearing);
 	CV_RegisterVar(&cv_grshaders);
 #endif
-
-	CV_RegisterVar(&cv_renderstats);
 
 #ifdef HWRENDER
 	if (rendermode != render_soft && rendermode != render_none)

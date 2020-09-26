@@ -47,6 +47,7 @@
 #include "lua_hook.h"
 #include "k_kart.h"
 #include "s_sound.h" // sfx_syfail
+#include "m_perfstats.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
