@@ -75,6 +75,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "fastcmp.h"
 #include "keys.h"
 #include "filesrch.h" // refreshdirmenu
+#include "m_perfstats.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -616,83 +617,7 @@ static void D_Display(void)
 
 		if (cv_renderstats.value)
 		{
-			char s[50];
-			int currenttime = I_GetTimeMicros();
-			int frametime = currenttime - rs_prevframetime;
-			int divisor = 1;
-			rs_prevframetime = currenttime;
-
-			if (rs_rendercalltime > 10000)
-				divisor = 1000;
-
-			snprintf(s, sizeof s - 1, "frmtime %d", frametime / divisor);
-			V_DrawThinString(20, 10, V_MONOSPACE | V_YELLOWMAP, s);
-			snprintf(s, sizeof s - 1, "drwtime %d", rs_rendercalltime / divisor);
-			V_DrawThinString(20, 20, V_MONOSPACE | V_YELLOWMAP, s);
-			snprintf(s, sizeof s - 1, "bsptime %d", rs_bsptime / divisor);
-			V_DrawThinString(24, 30, V_MONOSPACE | V_YELLOWMAP, s);
-			snprintf(s, sizeof s - 1, "bspcall %d", rs_numbspcalls);
-			V_DrawThinString(90, 10, V_MONOSPACE | V_BLUEMAP, s);
-			snprintf(s, sizeof s - 1, "sprites %d", rs_numsprites);
-			V_DrawThinString(90, 20, V_MONOSPACE | V_BLUEMAP, s);
-			snprintf(s, sizeof s - 1, "drwnode %d", rs_numdrawnodes);
-			V_DrawThinString(90, 30, V_MONOSPACE | V_BLUEMAP, s);
-			snprintf(s, sizeof s - 1, "plyobjs %d", rs_numpolyobjects);
-			V_DrawThinString(90, 40, V_MONOSPACE | V_BLUEMAP, s);
-			if (rendermode == render_opengl) // OpenGL specific stats
-			{
-				snprintf(s, sizeof s - 1, "nodesrt %d", rs_hw_nodesorttime / divisor);
-				V_DrawThinString(24, 40, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "nodedrw %d", rs_hw_nodedrawtime / divisor);
-				V_DrawThinString(24, 50, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "sprsort %d", rs_hw_spritesorttime / divisor);
-				V_DrawThinString(24, 60, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "sprdraw %d", rs_hw_spritedrawtime / divisor);
-				V_DrawThinString(24, 70, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "ui      %d", rs_uitime / divisor);
-				V_DrawThinString(20, 80, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "finupdt %d", rs_swaptime / divisor);
-				V_DrawThinString(20, 90, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "tic     %d", rs_tictime / divisor);
-				V_DrawThinString(20, 105, V_MONOSPACE | V_GRAYMAP, s);
-				if (cv_grbatching.value)
-				{
-					snprintf(s, sizeof s - 1, "batsort %d", rs_hw_batchsorttime / divisor);
-					V_DrawThinString(90, 55, V_MONOSPACE | V_REDMAP, s);
-					snprintf(s, sizeof s - 1, "batdraw %d", rs_hw_batchdrawtime / divisor);
-					V_DrawThinString(90, 65, V_MONOSPACE | V_REDMAP, s);
-
-					snprintf(s, sizeof s - 1, "polygon %d", rs_hw_numpolys);
-					V_DrawThinString(155, 10, V_MONOSPACE | V_PURPLEMAP, s);
-					snprintf(s, sizeof s - 1, "drwcall %d", rs_hw_numcalls);
-					V_DrawThinString(155, 20, V_MONOSPACE | V_PURPLEMAP, s);
-					snprintf(s, sizeof s - 1, "shaders %d", rs_hw_numshaders);
-					V_DrawThinString(155, 30, V_MONOSPACE | V_PURPLEMAP, s);
-					snprintf(s, sizeof s - 1, "vertex  %d", rs_hw_numverts);
-					V_DrawThinString(155, 40, V_MONOSPACE | V_PURPLEMAP, s);
-					snprintf(s, sizeof s - 1, "texture %d", rs_hw_numtextures);
-					V_DrawThinString(220, 10, V_MONOSPACE | V_PURPLEMAP, s);
-					snprintf(s, sizeof s - 1, "polyflg %d", rs_hw_numpolyflags);
-					V_DrawThinString(220, 20, V_MONOSPACE | V_PURPLEMAP, s);
-					snprintf(s, sizeof s - 1, "colors  %d", rs_hw_numcolors);
-					V_DrawThinString(220, 30, V_MONOSPACE | V_PURPLEMAP, s);
-				}
-			}
-			else // software specific stats
-			{
-				snprintf(s, sizeof s - 1, "portals %d", rs_sw_portaltime / divisor);
-				V_DrawThinString(24, 40, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "planes  %d", rs_sw_planetime / divisor);
-				V_DrawThinString(24, 50, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "masked  %d", rs_sw_maskedtime / divisor);
-				V_DrawThinString(24, 60, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "ui      %d", rs_uitime / divisor);
-				V_DrawThinString(20, 70, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "finupdt %d", rs_swaptime / divisor);
-				V_DrawThinString(20, 80, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "tic     %d", rs_tictime / divisor);
-				V_DrawThinString(20, 95, V_MONOSPACE | V_GRAYMAP, s);
-			}
+			M_DrawPerfStats();
 		}
 
 		if (cv_shittyscreen.value)
