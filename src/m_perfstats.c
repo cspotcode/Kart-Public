@@ -11,12 +11,12 @@
 /// \brief Performance measurement tools.
 
 #include "m_perfstats.h"
-#include "doomdef.h"
 #include "v_video.h"
 #include "i_video.h"
 #include "d_netcmd.h"
 #include "r_main.h"
 #include "i_system.h"
+#include "z_zone.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -28,11 +28,37 @@ int ps_playerthink_time = 0;
 int ps_thinkertime = 0;
 #ifdef HAVE_BLUA
 int ps_lua_thinkframe_time = 0;
+
+// dynamically allocated resizeable array for thinkframe hook stats
+ps_hookinfo_t *thinkframe_hooks = NULL;
+int thinkframe_hooks_length = 0;
+int thinkframe_hooks_capacity = 16;
+
+void PS_SetThinkFrameHookInfo(int index, UINT32 time_taken, char* short_src)
+{
+	if (!thinkframe_hooks)
+	{
+		// array needs to be initialized
+		thinkframe_hooks = Z_Malloc(sizeof(ps_hookinfo_t) * thinkframe_hooks_capacity, PU_STATIC, NULL);
+	}
+	if (index >= thinkframe_hooks_capacity)
+	{
+		// array needs more space, realloc with double size
+		thinkframe_hooks_capacity *= 2;
+		thinkframe_hooks = Z_Realloc(thinkframe_hooks,
+			sizeof(ps_hookinfo_t) * thinkframe_hooks_capacity, PU_STATIC, NULL);
+	}
+	thinkframe_hooks[index].time_taken = time_taken;
+	memcpy(thinkframe_hooks[index].short_src, short_src, LUA_IDSIZE * sizeof(char));
+	// since the values are set sequentially from begin to end, the last call should leave
+	// the correct value to this variable
+	thinkframe_hooks_length = index + 1;
+}
 #endif
 
 void M_DrawPerfStats(void)
 {
-	char s[50];
+	char s[100];
 	int currenttime = I_GetTimeMicros();
 	int frametime = currenttime - ps_prevframetime;
 	int divisor = 1;
@@ -252,4 +278,92 @@ void M_DrawPerfStats(void)
 #endif
 		}
 	}
+#ifdef HAVE_BLUA
+	else if (cv_perfstats.value == 3) // lua thinkframe
+	{
+		if (vid.width < 640 || vid.height < 400) // low resolution
+		{
+			V_DrawThinString(30, 30, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, "Not implemented for low res");
+		}
+		else // high resolution
+		{
+			int i;
+			// text writing position
+			int x = 5;
+			int y = 4;
+			UINT32 text_color;
+			char tempbuffer[LUA_IDSIZE];
+			char last_mod_name[LUA_IDSIZE];
+			last_mod_name[0] = '\0';
+			for (i = 0; i < thinkframe_hooks_length; i++)
+			{
+				char* str = thinkframe_hooks[i].short_src;
+				char* tempstr = tempbuffer;
+				int len = (int)strlen(str);
+				char* str_ptr;
+				if (strcmp(".lua", str + len - 4) == 0)
+				{
+					str[len-4] = '\0'; // remove .lua at end
+					len -= 4;
+				}
+				// we locate the wad/pk3 name in the string and compare it to
+				// what we found on the previous iteration.
+				// if the name has changed, print it out on the screen
+				strcpy(tempstr, str);
+				str_ptr = strrchr(tempstr, '|');
+				if (str_ptr)
+				{
+					*str_ptr = '\0';
+					str = str_ptr + 1; // this is the name of the hook without the mod file name
+					str_ptr = strrchr(tempstr, '/');
+					if (str_ptr)
+						tempstr = str_ptr + 1;
+					// tempstr should now point to the mod name, (wad/pk3) possibly truncated
+					if (strcmp(tempstr, last_mod_name) != 0)
+					{
+						strcpy(last_mod_name, tempstr);
+						len = (int)strlen(tempstr);
+						if (len > 30)
+							tempstr += len - 30;
+						snprintf(s, sizeof s - 1, "%s", tempstr);
+						V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
+						y += 4; // repeated code!
+						if (y > 180)
+						{
+							y = 10;
+							x += 150;
+							if (x > 155)
+								break;
+						}
+					}
+					text_color = V_YELLOWMAP;
+				}
+				else
+				{
+					// probably a standalone lua file
+					// cut off the folder if it's there
+					str_ptr = strrchr(tempstr, '/');
+					if (str_ptr)
+						str = str_ptr + 1;
+					text_color = 0; // white
+				}
+				len = (int)strlen(str);
+				if (len > 25)
+					str += len - 25;
+				snprintf(s, sizeof s - 1, "%25s: %u", str, thinkframe_hooks[i].time_taken);
+				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | text_color, s);
+				y += 4;
+				if (y > 180)
+				{
+					y = 10;
+					x += 150;
+					if (x > 155)
+						break;
+				}
+			}
+			// reset length so old data won't be read
+			thinkframe_hooks_length = 0;
+		}
+	}
+#endif
 }
