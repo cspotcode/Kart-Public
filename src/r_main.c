@@ -132,8 +132,10 @@ int ps_rendercalltime = 0;
 int ps_uitime = 0;
 int ps_swaptime = 0;
 
+int ps_skyboxtime = 0;
 int ps_bsptime = 0;
 
+int ps_sw_spritecliptime = 0;
 int ps_sw_portaltime = 0;
 int ps_sw_planetime = 0;
 int ps_sw_maskedtime = 0;
@@ -1365,6 +1367,7 @@ void R_RenderPlayerView(player_t *player)
 	portalrender = 0;
 	portal_base = portal_cap = NULL;
 
+	ps_skyboxtime = I_GetTimeMicros();
 	if (skybox && skyVisible)
 	{
 		R_SkyboxFrame(player);
@@ -1385,6 +1388,7 @@ void R_RenderPlayerView(player_t *player)
 #endif
 		R_DrawMasked();
 	}
+	ps_skyboxtime = I_GetTimeMicros() - ps_skyboxtime;
 
 	R_SetupFrame(player, skybox);
 	skyVisible = false;
@@ -1414,7 +1418,9 @@ void R_RenderPlayerView(player_t *player)
 	ps_bsptime = I_GetTimeMicros();
 	R_RenderBSPNode((INT32)numnodes - 1);
 	ps_bsptime = I_GetTimeMicros() - ps_bsptime;
+	ps_sw_spritecliptime = I_GetTimeMicros();
 	R_ClipSprites();
+	ps_sw_spritecliptime = I_GetTimeMicros() - ps_sw_spritecliptime;
 #ifdef TIMING
 	RDMSR(0x10, &mycount);
 	mytotal += mycount; // 64bit add

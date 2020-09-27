@@ -13,12 +13,23 @@
 #ifndef __M_PERFSTATS_H__
 #define __M_PERFSTATS_H__
 
+#include "doomdef.h"
+#include "lua_script.h"
+
 extern int ps_tictime;
 
 extern int ps_playerthink_time;
 extern int ps_thinkertime;
 #ifdef HAVE_BLUA
 extern int ps_lua_thinkframe_time;
+
+typedef struct
+{
+	UINT32 time_taken;
+	char short_src[LUA_IDSIZE];
+} ps_hookinfo_t;
+
+void PS_SetThinkFrameHookInfo(int index, UINT32 time_taken, char* short_src);
 #endif
 
 void M_DrawPerfStats(void);

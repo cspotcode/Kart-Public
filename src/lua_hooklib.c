@@ -24,6 +24,10 @@
 #include "lua_hook.h"
 #include "lua_hud.h" // hud_running errors
 
+#include "m_perfstats.h"
+#include "d_netcmd.h" // for cv_perfstats
+#include "i_system.h" // I_GetTimeMicros
+
 static UINT8 hooksAvailable[(hook_MAX/8)+1];
 
 const char *const hookNames[hook_MAX+1] = {
@@ -406,12 +410,17 @@ void LUAh_PlayerJoin(int playernum)
 void LUAh_ThinkFrame(void)
 {
 	hook_p hookp;
+	// variables used by perf stats
+	int hook_index = 0;
+	int time_taken = 0;
 	if (!gL || !(hooksAvailable[hook_ThinkFrame/8] & (1<<(hook_ThinkFrame%8))))
 		return;
 
 	for (hookp = roothook; hookp; hookp = hookp->next)
 		if (hookp->type == hook_ThinkFrame)
 		{
+			if (cv_perfstats.value == 3)
+				time_taken = I_GetTimeMicros();
 			lua_pushfstring(gL, FMT_HOOKID, hookp->id);
 			lua_gettable(gL, LUA_REGISTRYINDEX);
 			if (lua_pcall(gL, 0, 0, 0)) {
@@ -419,6 +428,17 @@ void LUAh_ThinkFrame(void)
 					CONS_Alert(CONS_WARNING,"%s\n",lua_tostring(gL, -1));
 				lua_pop(gL, 1);
 				hookp->error = true;
+			}
+			if (cv_perfstats.value == 3)
+			{
+				lua_Debug ar;
+				time_taken = I_GetTimeMicros() - time_taken;
+				// we need the function, let's just retrieve it again
+				lua_pushfstring(gL, FMT_HOOKID, hookp->id);
+				lua_gettable(gL, LUA_REGISTRYINDEX);
+				lua_getinfo(gL, ">S", &ar);
+				PS_SetThinkFrameHookInfo(hook_index, time_taken, ar.short_src);
+				hook_index++;
 			}
 		}
 }

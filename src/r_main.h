@@ -81,8 +81,10 @@ extern int ps_rendercalltime;
 extern int ps_uitime;
 extern int ps_swaptime;
 
+extern int ps_skyboxtime;
 extern int ps_bsptime;
 
+extern int ps_sw_spritecliptime;
 extern int ps_sw_portaltime;
 extern int ps_sw_planetime;
 extern int ps_sw_maskedtime;
