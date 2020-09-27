@@ -361,8 +361,6 @@ void M_DrawPerfStats(void)
 						break;
 				}
 			}
-			// reset length so old data won't be read
-			thinkframe_hooks_length = 0;
 		}
 	}
 #endif
