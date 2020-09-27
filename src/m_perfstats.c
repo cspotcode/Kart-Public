@@ -48,8 +48,10 @@ void M_DrawPerfStats(void)
 			V_DrawThinString(20, 10, V_MONOSPACE | V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "drwtime %d", ps_rendercalltime / divisor);
 			V_DrawThinString(20, 20, V_MONOSPACE | V_YELLOWMAP, s);
-			snprintf(s, sizeof s - 1, "bsptime %d", ps_bsptime / divisor);
+			snprintf(s, sizeof s - 1, "skybox  %d", ps_skyboxtime / divisor);
 			V_DrawThinString(24, 30, V_MONOSPACE | V_YELLOWMAP, s);
+			snprintf(s, sizeof s - 1, "bsptime %d", ps_bsptime / divisor);
+			V_DrawThinString(24, 40, V_MONOSPACE | V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "bspcall %d", ps_numbspcalls);
 			V_DrawThinString(90, 10, V_MONOSPACE | V_BLUEMAP, s);
 			snprintf(s, sizeof s - 1, "sprites %d", ps_numsprites);
@@ -62,19 +64,24 @@ void M_DrawPerfStats(void)
 			if (rendermode == render_opengl) // OpenGL specific stats
 			{
 				snprintf(s, sizeof s - 1, "nodesrt %d", ps_hw_nodesorttime / divisor);
-				V_DrawThinString(24, 40, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "nodedrw %d", ps_hw_nodedrawtime / divisor);
 				V_DrawThinString(24, 50, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "sprsort %d", ps_hw_spritesorttime / divisor);
+				snprintf(s, sizeof s - 1, "nodedrw %d", ps_hw_nodedrawtime / divisor);
 				V_DrawThinString(24, 60, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "sprdraw %d", ps_hw_spritedrawtime / divisor);
+				snprintf(s, sizeof s - 1, "sprsort %d", ps_hw_spritesorttime / divisor);
 				V_DrawThinString(24, 70, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "sprdraw %d", ps_hw_spritedrawtime / divisor);
+				V_DrawThinString(24, 80, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "other   %d",
+					(ps_rendercalltime - ps_skyboxtime - ps_bsptime - ps_hw_nodesorttime
+					- ps_hw_nodedrawtime - ps_hw_spritesorttime - ps_hw_spritedrawtime
+					- ps_hw_batchsorttime - ps_hw_batchdrawtime) / divisor);
+				V_DrawThinString(24, 90, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "ui      %d", ps_uitime / divisor);
-				V_DrawThinString(20, 80, V_MONOSPACE | V_YELLOWMAP, s);
+				V_DrawThinString(20, 100, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "finupdt %d", ps_swaptime / divisor);
-				V_DrawThinString(20, 90, V_MONOSPACE | V_YELLOWMAP, s);
+				V_DrawThinString(20, 110, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "tic     %d", ps_tictime / divisor);
-				V_DrawThinString(20, 105, V_MONOSPACE | V_GRAYMAP, s);
+				V_DrawThinString(20, 125, V_MONOSPACE | V_GRAYMAP, s);
 				if (cv_grbatching.value)
 				{
 					snprintf(s, sizeof s - 1, "batsort %d", ps_hw_batchsorttime / divisor);
@@ -97,22 +104,34 @@ void M_DrawPerfStats(void)
 					snprintf(s, sizeof s - 1, "colors  %d", ps_hw_numcolors);
 					V_DrawThinString(220, 30, V_MONOSPACE | V_PURPLEMAP, s);
 				}
+				else
+				{
+					// reset these vars so the "other" measurement isn't off
+					ps_hw_batchsorttime = 0;
+					ps_hw_batchdrawtime = 0;
+				}
 			}
 			else // software specific stats
 	#endif
 			{
-				snprintf(s, sizeof s - 1, "portals %d", ps_sw_portaltime / divisor);
-				V_DrawThinString(24, 40, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "planes  %d", ps_sw_planetime / divisor);
+				snprintf(s, sizeof s - 1, "sprclip %d", ps_sw_spritecliptime / divisor);
 				V_DrawThinString(24, 50, V_MONOSPACE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "masked  %d", ps_sw_maskedtime / divisor);
+				snprintf(s, sizeof s - 1, "portals %d", ps_sw_portaltime / divisor);
 				V_DrawThinString(24, 60, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "planes  %d", ps_sw_planetime / divisor);
+				V_DrawThinString(24, 70, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "masked  %d", ps_sw_maskedtime / divisor);
+				V_DrawThinString(24, 80, V_MONOSPACE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "other   %d",
+					(ps_rendercalltime - ps_skyboxtime - ps_bsptime - ps_sw_spritecliptime
+					- ps_sw_portaltime - ps_sw_planetime - ps_sw_maskedtime) / divisor);
+				V_DrawThinString(24, 90, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "ui      %d", ps_uitime / divisor);
-				V_DrawThinString(20, 70, V_MONOSPACE | V_YELLOWMAP, s);
+				V_DrawThinString(20, 100, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "finupdt %d", ps_swaptime / divisor);
-				V_DrawThinString(20, 80, V_MONOSPACE | V_YELLOWMAP, s);
+				V_DrawThinString(20, 110, V_MONOSPACE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "tic     %d", ps_tictime / divisor);
-				V_DrawThinString(20, 95, V_MONOSPACE | V_GRAYMAP, s);
+				V_DrawThinString(20, 125, V_MONOSPACE | V_GRAYMAP, s);
 			}
 		}
 		else // high resolution
@@ -121,8 +140,10 @@ void M_DrawPerfStats(void)
 			V_DrawSmallString(20, 10, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "3d rendering:   %d", ps_rendercalltime / divisor);
 			V_DrawSmallString(20, 15, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
-			snprintf(s, sizeof s - 1, "RenderBSPNode:  %d", ps_bsptime / divisor);
+			snprintf(s, sizeof s - 1, "Skybox render:  %d", ps_skyboxtime / divisor);
 			V_DrawSmallString(24, 20, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+			snprintf(s, sizeof s - 1, "RenderBSPNode:  %d", ps_bsptime / divisor);
+			V_DrawSmallString(24, 25, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "BSP calls:    %d", ps_numbspcalls);
 			V_DrawSmallString(115, 10, V_MONOSPACE | V_ALLOWLOWERCASE | V_BLUEMAP, s);
 			snprintf(s, sizeof s - 1, "Sprites:      %d", ps_numsprites);
@@ -135,19 +156,25 @@ void M_DrawPerfStats(void)
 			if (rendermode == render_opengl) // OpenGL specific stats
 			{
 				snprintf(s, sizeof s - 1, "Drwnode sort:   %d", ps_hw_nodesorttime / divisor);
-				V_DrawSmallString(24, 25, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "Drwnode render: %d", ps_hw_nodedrawtime / divisor);
 				V_DrawSmallString(24, 30, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "Sprite sort:    %d", ps_hw_spritesorttime / divisor);
+				snprintf(s, sizeof s - 1, "Drwnode render: %d", ps_hw_nodedrawtime / divisor);
 				V_DrawSmallString(24, 35, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "Sprite render:  %d", ps_hw_spritedrawtime / divisor);
+				snprintf(s, sizeof s - 1, "Sprite sort:    %d", ps_hw_spritesorttime / divisor);
 				V_DrawSmallString(24, 40, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "Sprite render:  %d", ps_hw_spritedrawtime / divisor);
+				V_DrawSmallString(24, 45, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				// Remember to update this calculation when adding more 3d rendering stats!
+				snprintf(s, sizeof s - 1, "Other:          %d",
+					(ps_rendercalltime - ps_skyboxtime - ps_bsptime - ps_hw_nodesorttime
+					- ps_hw_nodedrawtime - ps_hw_spritesorttime - ps_hw_spritedrawtime
+					- ps_hw_batchsorttime - ps_hw_batchdrawtime) / divisor);
+				V_DrawSmallString(24, 50, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "UI render:      %d", ps_uitime / divisor);
-				V_DrawSmallString(20, 45, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				V_DrawSmallString(20, 55, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "I_FinishUpdate: %d", ps_swaptime / divisor);
-				V_DrawSmallString(20, 50, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				V_DrawSmallString(20, 60, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "Game logic:     %d", ps_tictime / divisor);
-				V_DrawSmallString(20, 60, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
+				V_DrawSmallString(20, 70, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
 				if (cv_grbatching.value)
 				{
 					snprintf(s, sizeof s - 1, "Batch sort:   %d", ps_hw_batchsorttime / divisor);
@@ -170,22 +197,35 @@ void M_DrawPerfStats(void)
 					snprintf(s, sizeof s - 1, "Colors:     %d", ps_hw_numcolors);
 					V_DrawSmallString(200, 45, V_MONOSPACE | V_ALLOWLOWERCASE | V_PURPLEMAP, s);
 				}
+				else
+				{
+					// reset these vars so the "other" measurement isn't off
+					ps_hw_batchsorttime = 0;
+					ps_hw_batchdrawtime = 0;
+				}
 			}
 			else // software specific stats
 	#endif
 			{
-				snprintf(s, sizeof s - 1, "Portal render:  %d", ps_sw_portaltime / divisor);
-				V_DrawSmallString(24, 25, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "R_DrawPlanes:   %d", ps_sw_planetime / divisor);
+				snprintf(s, sizeof s - 1, "R_ClipSprites:  %d", ps_sw_spritecliptime / divisor);
 				V_DrawSmallString(24, 30, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
-				snprintf(s, sizeof s - 1, "R_DrawMasked:   %d", ps_sw_maskedtime / divisor);
+				snprintf(s, sizeof s - 1, "Portal render:  %d", ps_sw_portaltime / divisor);
 				V_DrawSmallString(24, 35, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "R_DrawPlanes:   %d", ps_sw_planetime / divisor);
+				V_DrawSmallString(24, 40, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				snprintf(s, sizeof s - 1, "R_DrawMasked:   %d", ps_sw_maskedtime / divisor);
+				V_DrawSmallString(24, 45, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				// Remember to update this calculation when adding more 3d rendering stats!
+				snprintf(s, sizeof s - 1, "Other:          %d",
+					(ps_rendercalltime - ps_skyboxtime - ps_bsptime - ps_sw_spritecliptime
+					- ps_sw_portaltime - ps_sw_planetime - ps_sw_maskedtime) / divisor);
+				V_DrawSmallString(24, 50, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "UI render:      %d", ps_uitime / divisor);
-				V_DrawSmallString(20, 40, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				V_DrawSmallString(20, 55, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "I_FinishUpdate: %d", ps_swaptime / divisor);
-				V_DrawSmallString(20, 45, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				V_DrawSmallString(20, 60, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
 				snprintf(s, sizeof s - 1, "Game logic:     %d", ps_tictime / divisor);
-				V_DrawSmallString(20, 55, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
+				V_DrawSmallString(20, 70, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
 			}
 		}
 	}
@@ -206,6 +246,9 @@ void M_DrawPerfStats(void)
 #ifdef HAVE_BLUA
 			snprintf(s, sizeof s - 1, "LUAh_ThinkFrame: %d", ps_lua_thinkframe_time);
 			V_DrawSmallString(24, 25, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+			snprintf(s, sizeof s - 1, "Other:           %d",
+				ps_tictime - ps_playerthink_time - ps_thinkertime - ps_lua_thinkframe_time);
+			V_DrawSmallString(24, 30, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
 #endif
 		}
 	}

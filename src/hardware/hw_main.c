@@ -4770,11 +4770,13 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 
 	// Render the skybox if there is one.
 	drewsky = false;
+	ps_skyboxtime = I_GetTimeMicros();
 	if (skybox)
 	{
 		R_SkyboxFrame(player);
 		HWR_RenderFrame(viewnumber, player, true);
 	}
+	ps_skyboxtime = I_GetTimeMicros() - ps_skyboxtime;
 
 	R_SetupFrame(player, false); // This can stay false because it is only used to set viewsky in r_main.c, which isn't used here
 	framecount++; // for timedemo
