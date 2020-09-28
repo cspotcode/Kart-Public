@@ -27,6 +27,7 @@ extern INT32 centerx, centery;
 
 extern fixed_t centerxfrac, centeryfrac;
 extern fixed_t projection, projectiony;
+extern fixed_t fovtan; // field of view
 
 extern size_t validcount, linecount, loopcount, framecount;
 
@@ -45,6 +46,8 @@ extern size_t validcount, linecount, loopcount, framecount;
 #define LIGHTSCALESHIFT 12
 #define MAXLIGHTZ 128
 #define LIGHTZSHIFT 20
+
+#define LIGHTRESOLUTIONFIX (640*fovtan/vid.width)
 
 extern lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 extern lighttable_t *scalelightfixed[MAXLIGHTSCALE];
@@ -76,24 +79,23 @@ void R_LerpCameraPosition(camera_t *thiscam, vector3_t *pos);
 
 // Render stats
 
-extern consvar_t cv_renderstats;
+extern int ps_prevframetime;// time when previous frame was rendered
+extern int ps_rendercalltime;
+extern int ps_uitime;
+extern int ps_swaptime;
 
-extern int rs_prevframetime;// time when previous frame was rendered
-extern int rs_rendercalltime;
-extern int rs_uitime;
-extern int rs_swaptime;
-extern int rs_tictime;
+extern int ps_skyboxtime;
+extern int ps_bsptime;
 
-extern int rs_bsptime;
+extern int ps_sw_spritecliptime;
+extern int ps_sw_portaltime;
+extern int ps_sw_planetime;
+extern int ps_sw_maskedtime;
 
-extern int rs_sw_portaltime;
-extern int rs_sw_planetime;
-extern int rs_sw_maskedtime;
-
-extern int rs_numbspcalls;
-extern int rs_numsprites;
-extern int rs_numdrawnodes;
-extern int rs_numpolyobjects;
+extern int ps_numbspcalls;
+extern int ps_numsprites;
+extern int ps_numdrawnodes;
+extern int ps_numpolyobjects;
 
 //
 // REFRESH - the actual rendering functions.
@@ -112,6 +114,9 @@ extern consvar_t cv_tailspickup;
 
 // Called by startup code.
 void R_Init(void);
+
+void R_CheckViewMorph(void);
+void R_ApplyViewMorph(void);
 
 // just sets setsizeneeded true
 extern boolean setsizeneeded;

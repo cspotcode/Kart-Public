@@ -171,21 +171,21 @@ static float gr_viewludsin, gr_viewludcos;
 static INT32 drawcount = 0;
 
 // Render stats
-int rs_hw_nodesorttime = 0;
-int rs_hw_nodedrawtime = 0;
-int rs_hw_spritesorttime = 0;
-int rs_hw_spritedrawtime = 0;
+int ps_hw_nodesorttime = 0;
+int ps_hw_nodedrawtime = 0;
+int ps_hw_spritesorttime = 0;
+int ps_hw_spritedrawtime = 0;
 
 // Render stats for batching
-int rs_hw_numpolys = 0;
-int rs_hw_numverts = 0;
-int rs_hw_numcalls = 0;
-int rs_hw_numshaders = 0;
-int rs_hw_numtextures = 0;
-int rs_hw_numpolyflags = 0;
-int rs_hw_numcolors = 0;
-int rs_hw_batchsorttime = 0;
-int rs_hw_batchdrawtime = 0;
+int ps_hw_numpolys = 0;
+int ps_hw_numverts = 0;
+int ps_hw_numcalls = 0;
+int ps_hw_numshaders = 0;
+int ps_hw_numtextures = 0;
+int ps_hw_numpolyflags = 0;
+int ps_hw_numcolors = 0;
+int ps_hw_batchsorttime = 0;
+int ps_hw_batchdrawtime = 0;
 
 
 // ==========================================================================
@@ -2366,8 +2366,11 @@ void HWR_RenderPolyObjectPlane(polyobj_t *polysector, boolean isceiling, fixed_t
 	}
 
 	// reference point for flat texture coord for each vertex around the polygon
-	flatxref = (float)(((fixed_t)FIXED_TO_FLOAT(polysector->origVerts[0].x) & (~flatflag)) / fflatsize);
-	flatyref = (float)(((fixed_t)FIXED_TO_FLOAT(polysector->origVerts[0].y) & (~flatflag)) / fflatsize);
+	flatxref = FIXED_TO_FLOAT(polysector->origVerts[0].x);
+	flatyref = FIXED_TO_FLOAT(polysector->origVerts[0].y);
+
+	flatxref = (float)(((fixed_t)flatxref & (~flatflag)) / fflatsize);
+	flatyref = (float)(((fixed_t)flatyref & (~flatflag)) / fflatsize);
 
 	// transform
 	v3d = planeVerts;
@@ -2832,7 +2835,7 @@ void HWR_Subsector(size_t num)
 		}
 
 		// for render stats
-		rs_numpolyobjects += numpolys;
+		ps_numpolyobjects += numpolys;
 
 		// Sort polyobjects
 		R_SortPolyObjects(sub);
@@ -2893,7 +2896,7 @@ void HWR_RenderBSPNode(INT32 bspnum)
 	// Decide which side the view point is on
 	INT32 side;
 
-	rs_numbspcalls++;
+	ps_numbspcalls++;
 
 	// Found a subsector?
 	if (bspnum & NF_SUBSECTOR)
@@ -4032,7 +4035,7 @@ void HWR_RenderDrawNodes(void)
 	// that is already lying around. This should all be in some sort of linked list or lists.
 	sortindex = Z_Calloc(sizeof(size_t) * (numplanes + numpolyplanes + numwalls), PU_STATIC, NULL);
 
-	rs_hw_nodesorttime = I_GetTimeMicros();
+	ps_hw_nodesorttime = I_GetTimeMicros();
 
 	for (i = 0; i < numplanes; i++, p++)
 	{
@@ -4052,7 +4055,7 @@ void HWR_RenderDrawNodes(void)
 		sortindex[p] = p;
 	}
 
-	rs_numdrawnodes = p;
+	ps_numdrawnodes = p;
 
 	// p is the number of stuff to sort
 
@@ -4096,9 +4099,9 @@ void HWR_RenderDrawNodes(void)
 		}
 	}
 
-	rs_hw_nodesorttime = I_GetTimeMicros() - rs_hw_nodesorttime;
+	ps_hw_nodesorttime = I_GetTimeMicros() - ps_hw_nodesorttime;
 
-	rs_hw_nodedrawtime = I_GetTimeMicros();
+	ps_hw_nodedrawtime = I_GetTimeMicros();
 
 	// Okay! Let's draw it all! Woo!
 	HWD.pfnSetTransform(&atransform);
@@ -4135,7 +4138,7 @@ void HWR_RenderDrawNodes(void)
 		}
 	}
 
-	rs_hw_nodedrawtime = I_GetTimeMicros() - rs_hw_nodedrawtime;
+	ps_hw_nodedrawtime = I_GetTimeMicros() - ps_hw_nodedrawtime;
 
 	numwalls = 0;
 	numplanes = 0;
@@ -4714,6 +4717,8 @@ void HWR_DrawSkyBackground(float fpov)
 	dometransform.scalez = 1;
 	dometransform.fovxangle = fpov; // Tails
 	dometransform.fovyangle = fpov; // Tails
+	dometransform.rollangle = atransform.rollangle;
+	dometransform.roll = atransform.roll;
 	dometransform.splitscreen = splitscreen;
 
 	HWR_GetTexture(texturetranslation[skytexture]);
@@ -4807,6 +4812,8 @@ void HWR_RenderFrame(INT32 viewnumber, player_t *player, boolean skybox)
 	gr_viewsin = FIXED_TO_FLOAT(viewsin);
 	gr_viewcos = FIXED_TO_FLOAT(viewcos);
 
+	memset(&atransform, 0x00, sizeof(FTransform));
+
 	// Set T&L transform
 	atransform.x = gr_viewx;
 	atransform.y = gr_viewy;
@@ -4835,6 +4842,12 @@ void HWR_RenderFrame(INT32 viewnumber, player_t *player, boolean skybox)
 
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
+	if (player->viewrollangle != 0)
+	{
+		fixed_t rol = AngleFixed(R_LerpAngle(player, viewrollangle));
+		atransform.rollangle = FIXED_TO_FLOAT(rol);
+		atransform.roll = true;
+	}
 	atransform.splitscreen = splitscreen;
 
 	for (i = 0; i <= splitscreen; i++)
@@ -4892,9 +4905,9 @@ void HWR_RenderFrame(INT32 viewnumber, player_t *player, boolean skybox)
 	if (cv_grbatching.value)
 		HWD.pfnStartBatching();
 	
-	rs_numbspcalls = 0;
-	rs_numpolyobjects = 0;
-	rs_bsptime = I_GetTimeMicros();
+	ps_numbspcalls = 0;
+	ps_numpolyobjects = 0;
+	ps_bsptime = I_GetTimeMicros();
 
 	drawcount = 0;
 	validcount++;
@@ -4902,29 +4915,29 @@ void HWR_RenderFrame(INT32 viewnumber, player_t *player, boolean skybox)
 	// Recursively "render" the BSP tree.
 	HWR_RenderBSPNode((INT32)numnodes-1);
 
-	rs_bsptime = I_GetTimeMicros() - rs_bsptime;
+	ps_bsptime = I_GetTimeMicros() - ps_bsptime;
 
 	current_bsp_culling_distance = 0;
 
 	if (cv_grbatching.value)
-		HWD.pfnRenderBatches(&rs_hw_numpolys, &rs_hw_numverts, &rs_hw_numcalls, &rs_hw_numshaders, &rs_hw_numtextures, &rs_hw_numpolyflags, &rs_hw_numcolors, &rs_hw_batchsorttime, &rs_hw_batchdrawtime);
+		HWD.pfnRenderBatches(&ps_hw_numpolys, &ps_hw_numverts, &ps_hw_numcalls, &ps_hw_numshaders, &ps_hw_numtextures, &ps_hw_numpolyflags, &ps_hw_numcolors, &ps_hw_batchsorttime, &ps_hw_batchdrawtime);
 
 	// Check for new console commands.
 	// this was removed since it caused crashes on leaving record attack with models on since it was removing mobjs that were about to be rendered
 	//NetUpdate();
 
 	// Draw MD2 and sprites
-	rs_numsprites = gr_visspritecount;
-	rs_hw_spritesorttime = I_GetTimeMicros();
+	ps_numsprites = gr_visspritecount;
+	ps_hw_spritesorttime = I_GetTimeMicros();
 	HWR_SortVisSprites();
-	rs_hw_spritesorttime = I_GetTimeMicros() - rs_hw_spritesorttime;
-	rs_hw_spritedrawtime = I_GetTimeMicros();
+	ps_hw_spritesorttime = I_GetTimeMicros() - ps_hw_spritesorttime;
+	ps_hw_spritedrawtime = I_GetTimeMicros();
 	HWR_DrawSprites();
-	rs_hw_spritedrawtime = I_GetTimeMicros() - rs_hw_spritedrawtime;
+	ps_hw_spritedrawtime = I_GetTimeMicros() - ps_hw_spritedrawtime;
 
-	rs_numdrawnodes = 0;
-	rs_hw_nodesorttime = 0;
-	rs_hw_nodedrawtime = 0;
+	ps_numdrawnodes = 0;
+	ps_hw_nodesorttime = 0;
+	ps_hw_nodedrawtime = 0;
 
 	if (numplanes || numpolyplanes || numwalls) // Render FOFs and translucent walls after everything
 		HWR_RenderDrawNodes();
@@ -4978,11 +4991,13 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 
 	// Render the skybox if there is one.
 	drewsky = false;
+	ps_skyboxtime = I_GetTimeMicros();
 	if (skybox)
 	{
 		R_SkyboxFrame(player);
 		HWR_RenderFrame(viewnumber, player, true);
 	}
+	ps_skyboxtime = I_GetTimeMicros() - ps_skyboxtime;
 
 	R_SetupFrame(player, false); // This can stay false because it is only used to set viewsky in r_main.c, which isn't used here
 	framecount++; // for timedemo

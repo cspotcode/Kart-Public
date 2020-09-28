@@ -1113,7 +1113,7 @@ static void R_SplitSprite(vissprite_t *sprite, mobj_t *thing)
 			if (!((thing->frame & (FF_FULLBRIGHT|FF_TRANSMASK) || thing->flags2 & MF2_SHADOW)
 				&& (!newsprite->extra_colormap || !(newsprite->extra_colormap->fog & 1))))
 			{
-				lindex = FixedMul(sprite->xscale, FixedDiv(640, vid.width))>>(LIGHTSCALESHIFT);
+				lindex = FixedMul(sprite->xscale, LIGHTRESOLUTIONFIX)>>(LIGHTSCALESHIFT);
 
 				if (lindex >= MAXLIGHTSCALE)
 					lindex = MAXLIGHTSCALE-1;
@@ -1502,7 +1502,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	else
 	{
 		// diminished light
-		lindex = FixedMul(xscale, FixedDiv(640, vid.width))>>(LIGHTSCALESHIFT);
+		lindex = FixedMul(xscale, LIGHTRESOLUTIONFIX)>>(LIGHTSCALESHIFT);
 
 		if (lindex >= MAXLIGHTSCALE)
 			lindex = MAXLIGHTSCALE-1;
@@ -2221,7 +2221,7 @@ static drawnode_t *R_CreateDrawNode(drawnode_t *link)
 	node->ffloor = NULL;
 	node->sprite = NULL;
 
-	rs_numdrawnodes++;
+	ps_numdrawnodes++;
 	return node;
 }
 
@@ -2279,7 +2279,7 @@ static void R_DrawPrecipitationSprite(vissprite_t *spr)
 void R_ClipSprites(void)
 {
 	vissprite_t *spr;
-	rs_numsprites = visspritecount; // this function has access to visspritecount so put the value to rs_numsprites here
+	ps_numsprites = visspritecount; // this function has access to visspritecount so put the value to ps_numsprites here
 	for (;clippedvissprites < visspritecount; clippedvissprites++)
 	{
 		drawseg_t *ds;

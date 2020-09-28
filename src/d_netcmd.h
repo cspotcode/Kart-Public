@@ -152,6 +152,7 @@ extern consvar_t cv_specialrings, cv_powerstones, cv_matchboxes, cv_competitionb
 extern consvar_t cv_maxping;
 extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
+extern consvar_t cv_showviewpointtext;
 
 extern consvar_t cv_skipmapcheck;
 
@@ -177,6 +178,11 @@ typedef enum
 
 extern consvar_t cv_skinselectmenu;
 extern consvar_t cv_skinselectgridsort;
+
+extern consvar_t cv_perfstats;
+
+extern consvar_t cv_lessbattlevotes;
+extern consvar_t cv_encorevotes;
 
 typedef enum
 {
