@@ -8360,6 +8360,7 @@ void P_PlayerThink(player_t *player)
 	player->lerp.aiming = player->aiming;
 	player->lerp.awayviewaiming = player->awayviewaiming;
 	player->lerp.frameangle = player->frameangle;
+	player->lerp.viewrollangle = player->viewrollangle;
 
 #ifdef PARANOIA
 	if (!player->mo)

@@ -4692,7 +4692,7 @@ void HWR_RenderFrame(INT32 viewnumber, player_t *player, boolean skybox)
 	atransform.fovyangle = fpov; // Tails
 	if (player->viewrollangle != 0)
 	{
-		fixed_t rol = AngleFixed(player->viewrollangle);
+		fixed_t rol = AngleFixed(R_LerpAngle(player, viewrollangle));
 		atransform.rollangle = FIXED_TO_FLOAT(rol);
 		atransform.roll = true;
 	}

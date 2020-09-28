@@ -531,6 +531,7 @@ typedef struct player_s
 
 	struct {
 		angle_t aiming, awayviewaiming, frameangle;
+		angle_t viewrollangle;
 	} lerp;
 } player_t;
 
