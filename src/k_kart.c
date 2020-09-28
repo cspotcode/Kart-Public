@@ -9,6 +9,7 @@
 #include "g_game.h"
 #include "m_random.h"
 #include "p_local.h"
+#include "i_system.h"
 #include "p_slopes.h"
 #include "r_draw.h"
 #include "r_local.h"
@@ -5561,9 +5562,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							P_SetScale(overlay, player->mo->scale);
 						}
 						player->kartstuff[k_invincibilitytimer] = itemtime+(2*TICRATE); // 10 seconds
-						P_RestoreMusic(player);
-						if (!P_IsLocalPlayer(player))
+						if (P_IsLocalPlayer(player))
+							S_ChangeMusicSpecial("kinvnc");
+						else
 							S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmi : sfx_kinvnc));
+						P_RestoreMusic(player);
 						K_PlayPowerGloatSound(player->mo);
 						player->kartstuff[k_itemamount]--;
 					}
@@ -5764,9 +5767,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
 								player->mo->destscale = (6*player->mo->destscale)/8;
 							player->kartstuff[k_growshrinktimer] = itemtime+(4*TICRATE); // 12 seconds
-							P_RestoreMusic(player);
-							if (!P_IsLocalPlayer(player))
+							if (P_IsLocalPlayer(player))
+								S_ChangeMusicSpecial("kgrow");
+							else
 								S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow));
+							P_RestoreMusic(player);
 							S_StartSound(player->mo, sfx_kc5a);
 						}
 						player->kartstuff[k_itemamount]--;
@@ -8322,7 +8327,7 @@ static void K_drawKartFinish(void)
 
 		x = ((vid.width<<FRACBITS)/vid.dupx);
 		xval = (SHORT(kp_racefinish[pnum]->width)<<FRACBITS);
-		x = ((TICRATE - stplyr->kartstuff[k_cardanimation])*(xval > x ? xval : x))/TICRATE;
+		x = FixedMul((TICRATE - stplyr->kartstuff[k_cardanimation])*FRACUNIT, (xval > x ? xval : x))/TICRATE;
 
 		if (splitscreen && stplyr == &players[displayplayers[1]])
 			x = -x;
@@ -8780,6 +8785,9 @@ static void K_drawLapStartAnim(void)
 void K_drawKartFreePlay(UINT32 flashtime)
 {
 	// no splitscreen support because it's not FREE PLAY if you have more than one player in-game
+
+	if (! cv_showfreeplay.value)
+		return;
 
 	if ((flashtime % TICRATE) < TICRATE/2)
 		return;

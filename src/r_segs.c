@@ -12,6 +12,7 @@
 /// \brief All the clipping: columns, horizontal spans, sky columns
 
 #include "doomdef.h"
+#include "d_main.h"
 #include "r_local.h"
 #include "r_sky.h"
 
@@ -194,7 +195,7 @@ static void R_DrawWallSplats(void)
 		// draw the columns
 		for (dc_x = x1; dc_x <= x2; dc_x++, spryscale += rw_scalestep)
 		{
-			pindex = FixedMul(spryscale, FixedDiv(640, vid.width))>>LIGHTSCALESHIFT;
+			pindex = FixedMul(spryscale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
 			if (pindex >= MAXLIGHTSCALE)
 				pindex = MAXLIGHTSCALE - 1;
 			dc_colormap = walllights[pindex];
@@ -547,7 +548,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 						else
 							xwalllights = scalelight[rlight->lightnum];
 
-						pindex = FixedMul(spryscale, FixedDiv(640, vid.width))>>LIGHTSCALESHIFT;
+						pindex = FixedMul(spryscale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
 
 						if (pindex >= MAXLIGHTSCALE)
 							pindex = MAXLIGHTSCALE - 1;
@@ -596,7 +597,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 				}
 
 				// calculate lighting
-				pindex = FixedMul(spryscale, FixedDiv(640, vid.width))>>LIGHTSCALESHIFT;
+				pindex = FixedMul(spryscale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
 
 				if (pindex >= MAXLIGHTSCALE)
 					pindex = MAXLIGHTSCALE - 1;
@@ -1080,7 +1081,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 						else
 							xwalllights = scalelight[lightnum];
 
-						pindex = FixedMul(spryscale, FixedDiv(640, vid.width))>>LIGHTSCALESHIFT;
+						pindex = FixedMul(spryscale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
 
 						if (pindex >= MAXLIGHTSCALE)
 							pindex = MAXLIGHTSCALE-1;
@@ -1181,7 +1182,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			}
 
 			// calculate lighting
-			pindex = FixedMul(spryscale, FixedDiv(640, vid.width))>>LIGHTSCALESHIFT;
+			pindex = FixedMul(spryscale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
 
 			if (pindex >= MAXLIGHTSCALE)
 				pindex = MAXLIGHTSCALE - 1;
@@ -1374,7 +1375,7 @@ static void R_RenderSegLoop (void)
 		if (segtextured)
 		{
 			// calculate lighting
-			pindex = FixedMul(rw_scale, FixedDiv(640, vid.width))>>LIGHTSCALESHIFT;
+			pindex = FixedMul(rw_scale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
 
 			if (pindex >=  MAXLIGHTSCALE)
 				pindex = MAXLIGHTSCALE-1;
@@ -1411,7 +1412,7 @@ static void R_RenderSegLoop (void)
 				else
 					xwalllights = scalelight[lightnum];
 
-				pindex = FixedMul(rw_scale, FixedDiv(640, vid.width))>>LIGHTSCALESHIFT;
+				pindex = FixedMul(rw_scale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
 
 				if (pindex >=  MAXLIGHTSCALE)
 					pindex = MAXLIGHTSCALE-1;
@@ -1862,7 +1863,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			rw_midtexturemid = worldtop;
 			rw_midtextureslide = ceilingfrontslide;
 		}
-		rw_midtexturemid += sidedef->rowoffset;
+		rw_midtexturemid += sidedef->lerp.leveltime ? R_LerpAngle(sidedef, rowoffset) : sidedef->rowoffset;
 
 		ds_p->silhouette = SIL_BOTH;
 		ds_p->sprtopclip = screenheightarray;
@@ -2095,8 +2096,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			}
 		}
 
-		rw_toptexturemid += sidedef->rowoffset;
-		rw_bottomtexturemid += sidedef->rowoffset;
+		rw_toptexturemid += sidedef->lerp.leveltime ? R_LerpAngle(sidedef, rowoffset) : sidedef->rowoffset;
+		rw_bottomtexturemid += sidedef->lerp.leveltime ? R_LerpAngle(sidedef, rowoffset) : sidedef->rowoffset;
 
 		// allocate space for masked texture tables
 		if (frontsector && backsector && frontsector->tag != backsector->tag && (backsector->ffloors || frontsector->ffloors))
@@ -2352,8 +2353,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 				rw_midtextureback = worldhigh;
 				rw_midtexturebackslide = ceilingbackslide;
 			}
-			rw_midtexturemid += sidedef->rowoffset;
-			rw_midtextureback += sidedef->rowoffset;
+			rw_midtexturemid += sidedef->lerp.leveltime ? R_LerpAngle(sidedef, rowoffset) : sidedef->rowoffset;
+			rw_midtextureback += sidedef->lerp.leveltime ? R_LerpAngle(sidedef, rowoffset) : sidedef->rowoffset;
 
 			maskedtexture = true;
 		}
@@ -2390,7 +2391,10 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 		/// don't use texture offset for splats
 		rw_offset2 = rw_offset + curline->offset;
-		rw_offset += sidedef->textureoffset + curline->offset;
+		if (sidedef->lerp.leveltime)
+			rw_offset += R_LerpAngle(sidedef, textureoffset) + curline->offset;
+		else
+			rw_offset += sidedef->textureoffset + curline->offset;
 		rw_centerangle = ANGLE_90 + viewangle - rw_normalangle;
 
 		// calculate light table

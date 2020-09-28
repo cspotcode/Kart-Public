@@ -1219,6 +1219,8 @@ boolean P_EndingMusic(player_t *player)
 //
 void P_RestoreMusic(player_t *player)
 {
+	UINT32 position;
+
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
 		return;
 
@@ -1275,10 +1277,16 @@ void P_RestoreMusic(player_t *player)
 
 		// Item - Grow
 		if (wantedmus == 2)
+		{
 			S_ChangeMusicInternal("kgrow", true);
+			S_SetRestoreMusicFadeInCvar(&cv_growmusicfade);
+		}
 		// Item - Invincibility
 		else if (wantedmus == 1)
+		{
 			S_ChangeMusicInternal("kinvnc", true);
+			S_SetRestoreMusicFadeInCvar(&cv_invincmusicfade);
+		}
 		else
 		{
 #if 0
@@ -1287,7 +1295,15 @@ void P_RestoreMusic(player_t *player)
 			if (G_RaceGametype() && player->laps >= (UINT8)(cv_numlaps.value - 1))
 				S_SpeedMusic(1.2f);
 #endif
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+			if (mapmusresume && cv_resume.value)
+				position = mapmusresume;
+			else
+				position = mapmusposition;
+
+			S_ChangeMusicEx(mapmusname, mapmusflags, true, position, 0,
+					S_GetRestoreMusicFadeIn());
+			S_ClearRestoreMusicFadeInCvar();
+			mapmusresume = 0;
 		}
 	}
 }
@@ -5165,6 +5181,8 @@ static void P_NiGHTSMovement(player_t *player)
 		else // AngleFixed(R_PointToAngle2()) results in slight inaccuracy! Don't use it unless movement is on both axises.
 			newangle = (INT16)FixedInt(AngleFixed(R_PointToAngle2(0,0, cmd->sidemove*FRACUNIT, cmd->forwardmove*FRACUNIT)));
 
+		newangle -= player->viewrollangle / ANG1;
+
 		if (newangle < 0 && moved)
 			newangle = (INT16)(360+newangle);
 	}
@@ -7106,6 +7124,11 @@ consvar_t cv_cam4_speed = {"cam4_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, N
 consvar_t cv_cam4_rotate = {"cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate4_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_cam4_rotspeed = {"cam4_rotspeed", "10", CV_SAVE, rotation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_tilting = {"tilting", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_actionmovie = {"actionmovie", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_windowquake = {"windowquake", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 fixed_t t_cam_dist = -42;
 fixed_t t_cam_height = -42;
 fixed_t t_cam_rotate = -42;
@@ -7399,6 +7422,13 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	thiscam->height = 16*FRACUNIT;
 
 	while (!P_MoveChaseCamera(player,thiscam,true) && ++tries < 2*TICRATE);
+
+	// Don't lerp from the old position!
+	thiscam->lerp.x = thiscam->x;
+	thiscam->lerp.y = thiscam->y;
+	thiscam->lerp.z = thiscam->z;
+	thiscam->lerp.angle = thiscam->angle;
+	thiscam->lerp.aiming = thiscam->aiming;
 }
 
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled)
@@ -8215,6 +8245,109 @@ void P_DoTimeOver(player_t *player)
 		exitcountdown = 5*TICRATE;
 }
 
+	/* gaysed script from me, based on Golden's sprite slope roll */
+
+// holy SHIT
+static INT32
+Quaketilt (player_t *player)
+{
+	angle_t tilt;
+	fixed_t lowb; // this threshold for speed
+	angle_t moma = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+	INT32 delta = (INT32)( player->mo->angle - moma );
+	fixed_t speed;
+
+	boolean sliptiding =
+		(
+				player->kartstuff[k_aizdriftstrat] != 0 &&
+				player->kartstuff[k_drift]         == 0
+		);
+
+	if (delta == (INT32)ANGLE_180)/* FUCK YOU HAVE A HACK */
+	{
+		return 0;
+	}
+
+	// Hi! I'm "not a math guy"!
+	if (abs(delta) > ANGLE_90)
+		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
+	if (P_IsObjectOnGround(player->mo))
+	{
+		if (sliptiding)
+		{
+			tilt = ANGLE_45;
+			lowb = 5*FRACUNIT;
+		}
+		else
+		{
+			tilt = ANGLE_11hh/2;
+			lowb = 15*FRACUNIT;
+		}
+	}
+	else
+	{
+		tilt = ANGLE_22h;
+		lowb = 10*FRACUNIT;
+	}
+	moma = FixedMul(FixedDiv(delta, ANGLE_90), tilt);
+	speed = abs( player->mo->momx + player->mo->momy );
+	if (speed < lowb)
+	{
+		// ease out tilt as we slow...
+		moma = FixedMul(moma, FixedDiv(speed, lowb));
+	}
+	return moma;
+}
+
+static void
+DoABarrelRoll (player_t *player)
+{
+	angle_t slope;
+	angle_t delta;
+
+	if (player->mo->standingslope)
+	{
+		slope = player->mo->standingslope->zangle;
+	}
+	else
+	{
+		slope = 0;
+	}
+
+	if (abs((INT32)slope) > ANGLE_11hh)
+	{
+		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
+		slope = -(FixedMul(FINESINE (delta>>ANGLETOFINESHIFT), slope));
+	}
+	else
+	{
+		slope = 0;
+	}
+
+	slope -= Quaketilt(player);
+
+	delta = (INT32)( slope - player->tilt )/ 32;
+
+	if (delta)
+		player->tilt += delta;
+	else
+		player->tilt  = slope;
+
+	if (cv_tilting.value)
+	{
+		player->viewrollangle = player->tilt;
+
+		if (cv_actionmovie.value)
+		{
+			player->viewrollangle += quake.roll;
+		}
+	}
+	else
+	{
+		player->viewrollangle = 0;
+	}
+}
+
 //
 // P_PlayerThink
 //
@@ -8223,6 +8356,10 @@ void P_PlayerThink(player_t *player)
 {
 	ticcmd_t *cmd;
 	const size_t playeri = (size_t)(player - players);
+
+	player->lerp.aiming = player->aiming;
+	player->lerp.awayviewaiming = player->awayviewaiming;
+	player->lerp.frameangle = player->frameangle;
 
 #ifdef PARANOIA
 	if (!player->mo)
@@ -8763,6 +8900,8 @@ void P_PlayerThink(player_t *player)
 	player->pflags &= ~PF_SLIDING;
 
 	K_KartPlayerThink(player, cmd); // SRB2kart
+
+	DoABarrelRoll(player);
 
 /*
 //	Colormap verification

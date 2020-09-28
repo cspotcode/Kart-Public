@@ -852,6 +852,12 @@ INT32 I_GetKey (void)
 	return rc;
 }
 
+void
+I_CursedWindowMovement (int xd, int yd)
+{
+	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
+}
+
 //
 // I_JoyScale
 //
@@ -2939,9 +2945,9 @@ static p_timeGetTime pfntimeGetTime = NULL;
 // but lower precision on Windows NT
 // ---------
 
-tic_t I_GetTime(void)
+static DWORD TimeMillis(void)
 {
-	tic_t newtics = 0;
+	DWORD newtics = 0;
 
 	if (!starttickcount) // high precision timer
 	{
@@ -2961,7 +2967,7 @@ tic_t I_GetTime(void)
 
 		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
 		{
-			newtics = (INT32)((currtime.QuadPart - basetime.QuadPart) * NEWTICRATE
+			newtics = (INT32)((currtime.QuadPart - basetime.QuadPart) * 1000
 				/ frequency.QuadPart);
 		}
 		else if (pfntimeGetTime)
@@ -2969,11 +2975,11 @@ tic_t I_GetTime(void)
 			currtime.LowPart = pfntimeGetTime();
 			if (!basetime.LowPart)
 				basetime.LowPart = currtime.LowPart;
-			newtics = ((currtime.LowPart - basetime.LowPart)/(1000/NEWTICRATE));
+			newtics = ((currtime.LowPart - basetime.LowPart));
 		}
 	}
 	else
-		newtics = (GetTickCount() - starttickcount)/(1000/NEWTICRATE);
+		newtics = (GetTickCount() - starttickcount);
 
 	return newtics;
 }
@@ -2991,11 +2997,8 @@ static void I_ShutdownTimer(void)
 	}
 }
 #else
-//
-// I_GetTime
-// returns time in 1/TICRATE second tics
-//
-tic_t I_GetTime (void)
+
+static int TimeMillis(void)
 {
 	static Uint64 basetime = 0;
 		   Uint64 ticks = SDL_GetTicks();
@@ -3005,13 +3008,37 @@ tic_t I_GetTime (void)
 
 	ticks -= basetime;
 
-	ticks = (ticks*TICRATE);
-
-	ticks = (ticks/1000);
-
-	return (tic_t)ticks;
+	return (int)ticks;
 }
+
 #endif
+
+//
+// I_GetTime
+// returns time in 1/TICRATE second tics
+//
+tic_t I_GetTime(void)
+{
+	return (TimeMillis() * NEWTICRATE) / 1000;
+}
+
+fixed_t I_GetFracTime(void)
+{
+	Uint64 ticks;
+	Uint64 prevticks;
+	fixed_t frac;
+
+	ticks = TimeMillis();
+	prevticks = prev_tics * 1000 / TICRATE;
+
+	frac = FixedDiv((ticks - prevticks) * FRACUNIT, (int)lroundf((1.f/TICRATE)*1000 * FRACUNIT));
+	return frac > FRACUNIT ? FRACUNIT : frac;
+}
+
+UINT16 I_GetFrameReference(UINT16 fps)
+{
+	return (TimeMillis() % 1000) * fps / 1000;
+}
 
 //
 //I_StartupTimer
@@ -3034,7 +3061,7 @@ void I_StartupTimer(void)
 		pfntimeGetTime = (p_timeGetTime)(LPVOID)GetProcAddress(winmm, "timeGetTime");
 	}
 	I_AddExitFunc(I_ShutdownTimer);
-#endif
+#endif/*_WIN32*/
 }
 
 

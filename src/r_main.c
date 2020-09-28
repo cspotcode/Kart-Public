@@ -21,6 +21,7 @@
 #include "r_sky.h"
 #include "st_stuff.h"
 #include "p_local.h"
+#include "p_slopes.h"
 #include "keys.h"
 #include "i_video.h"
 #include "m_menu.h"
@@ -517,6 +518,73 @@ boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixe
 	return false;
 }
 
+void R_LerpMobjPosition(mobj_t *mo, vector3_t *pos)
+{
+	pos->x = mo->momx;
+	pos->y = mo->momy;
+	pos->z = mo->momz;
+
+	if ((mo->type == MT_SHADOW || mo->type == MT_PLAYERRETICULE) && mo->target && !P_MobjWasRemoved(mo->target))
+	{
+		R_LerpMobjPosition(mo->target, pos);
+		pos->x += mo->x - mo->target->x;
+		pos->y += mo->y - mo->target->y;
+		pos->z += mo->z - mo->target->z;
+		return;
+	}
+	else if ((
+		(!pos->x && !pos->y && !pos->z)
+		|| (mo->type == MT_ORBINAUT_SHIELD || mo->type == MT_JAWZ_SHIELD || mo->type == MT_BANANA_SHIELD || mo->type == MT_THUNDERSHIELD ||
+			mo->type == MT_ORBINAUT || mo->type == MT_ROCKETSNEAKER)
+	) && (mo->lerp.x || mo->lerp.y || mo->lerp.z))
+	{
+		pos->x = mo->x - mo->lerp.x;
+		pos->y = mo->y - mo->lerp.y;
+		pos->z = mo->z - mo->lerp.z;
+	}
+	else if (mo->standingslope)
+	{
+		if (mo->standingslope->flags & SL_NOPHYSICS)
+		{
+		   fixed_t dist = FixedMul(pos->x, mo->standingslope->d.x) +
+						  FixedMul(pos->y, mo->standingslope->d.y);
+
+		   pos->z += FixedMul(dist, mo->standingslope->zdelta);
+		}
+		else
+		{
+			P_QuantizeMomentumToSlope(pos, mo->standingslope);
+		}
+
+		if (lerp_fractic < 0 && (mo->lerp.x || mo->lerp.y || mo->lerp.z))
+		{
+			vector3_t pos2; fixed_t maxv;
+			pos2.x = mo->x - mo->lerp.x;
+			pos2.y = mo->y - mo->lerp.y;
+			pos2.z = mo->z - mo->lerp.z;
+			maxv = max(abs(pos->x), max(abs(pos->y), abs(pos->z)));
+
+			if (abs(pos2.x) <= maxv<<2 && abs(pos2.y) <= maxv<<2 && abs(pos2.z) <= maxv<<2)
+			{
+				pos->x += FixedMul(pos->x - pos2.x, lerp_fractic);
+				pos->y += FixedMul(pos->y - pos2.y, lerp_fractic);
+				pos->z += FixedMul(pos->z - pos2.z, lerp_fractic);
+			}
+		}
+	}
+
+	pos->x = mo->x + FixedMul(pos->x, lerp_fractic);
+	pos->y = mo->y + FixedMul(pos->y, lerp_fractic);
+	pos->z = mo->z + FixedMul(pos->z, lerp_fractic);
+}
+
+void R_LerpCameraPosition(camera_t *thiscam, vector3_t *pos)
+{
+	pos->x = thiscam->x + FixedMul(thiscam->x - thiscam->lerp.x, lerp_fractic);
+	pos->y = thiscam->y + FixedMul(thiscam->y - thiscam->lerp.y, lerp_fractic);
+	pos->z = thiscam->z + FixedMul(thiscam->z - thiscam->lerp.z, lerp_fractic);
+}
+
 //
 // R_InitTextureMapping
 //
@@ -622,6 +690,303 @@ static inline void R_InitLightTables(void)
 	}
 }
 
+//#define WOUGHMP_WOUGHMP // I got a fish-eye lens - I'll make a rap video with a couple of friends
+// it's kinda laggy sometimes
+
+static struct {
+	angle_t rollangle; // pre-shifted by fineshift
+#ifdef WOUGHMP_WOUGHMP
+	fixed_t fisheye;
+#endif
+
+	fixed_t zoomneeded;
+	INT32 *scrmap;
+	INT32 scrmapsize;
+
+	INT32 x1; // clip rendering horizontally for efficiency
+	INT16 ceilingclip[MAXVIDWIDTH], floorclip[MAXVIDWIDTH];
+
+	boolean use;
+} viewmorph = {
+	0,
+#ifdef WOUGHMP_WOUGHMP
+	0,
+#endif
+
+	FRACUNIT,
+	NULL,
+	0,
+
+	0,
+	{}, {},
+
+	false
+};
+
+void R_CheckViewMorph(void)
+{
+	float zoomfactor, rollcos, rollsin;
+	float x1, y1, x2, y2;
+	fixed_t temp;
+	INT32 end, vx, vy, pos, usedpos;
+	INT32 usedx, usedy, halfwidth = vid.width/2, halfheight = vid.height/2;
+#ifdef WOUGHMP_WOUGHMP
+	float fisheyemap[MAXVIDWIDTH/2 + 1];
+#endif
+
+	angle_t rollangle = players[displayplayers[0]].viewrollangle;
+#ifdef WOUGHMP_WOUGHMP
+	fixed_t fisheye = cv_cam2_turnmultiplier.value; // temporary test value
+#endif
+
+	rollangle >>= ANGLETOFINESHIFT;
+	rollangle = ((rollangle+2) & ~3) & FINEMASK; // Limit the distinct number of angles to reduce recalcs from angles changing a lot.
+
+#ifdef WOUGHMP_WOUGHMP
+	fisheye &= ~0x7FF; // Same
+#endif
+
+	if (rollangle == viewmorph.rollangle &&
+#ifdef WOUGHMP_WOUGHMP
+		fisheye == viewmorph.fisheye &&
+#endif
+		viewmorph.scrmapsize == vid.width*vid.height)
+		return; // No change
+
+	viewmorph.rollangle = rollangle;
+#ifdef WOUGHMP_WOUGHMP
+	viewmorph.fisheye = fisheye;
+#endif
+
+	if (viewmorph.rollangle == 0
+#ifdef WOUGHMP_WOUGHMP
+		 && viewmorph.fisheye == 0
+#endif
+	 )
+	{
+		viewmorph.use = false;
+		viewmorph.x1 = 0;
+		if (viewmorph.zoomneeded != FRACUNIT)
+			R_SetViewSize();
+		viewmorph.zoomneeded = FRACUNIT;
+
+		return;
+	}
+
+	if (viewmorph.scrmapsize != vid.width*vid.height)
+	{
+		if (viewmorph.scrmap)
+			free(viewmorph.scrmap);
+		viewmorph.scrmap = malloc(vid.width*vid.height * sizeof(INT32));
+		viewmorph.scrmapsize = vid.width*vid.height;
+	}
+
+	temp = FINECOSINE(rollangle);
+	rollcos = FIXED_TO_FLOAT(temp);
+	temp = FINESINE(rollangle);
+	rollsin = FIXED_TO_FLOAT(temp);
+
+	// Calculate maximum zoom needed
+	x1 = (vid.width*fabsf(rollcos) + vid.height*fabsf(rollsin)) / vid.width;
+	y1 = (vid.height*fabsf(rollcos) + vid.width*fabsf(rollsin)) / vid.height;
+
+#ifdef WOUGHMP_WOUGHMP
+	if (fisheye)
+	{
+		float f = FIXED_TO_FLOAT(fisheye);
+		for (vx = 0; vx <= halfwidth; vx++)
+			fisheyemap[vx] = 1.0f / cos(atan(vx * f / halfwidth));
+
+		f = cos(atan(f));
+		if (f < 1.0f)
+		{
+			x1 /= f;
+			y1 /= f;
+		}
+	}
+#endif
+
+	temp = max(x1, y1)*FRACUNIT;
+	if (temp < FRACUNIT)
+		temp = FRACUNIT;
+	else
+		temp |= 0x3FFF; // Limit how many times the viewport needs to be recalculated
+
+	//CONS_Printf("Setting zoom to %f\n", FIXED_TO_FLOAT(temp));
+
+	if (temp != viewmorph.zoomneeded)
+	{
+		viewmorph.zoomneeded = temp;
+		R_SetViewSize();
+	}
+
+	zoomfactor = FIXED_TO_FLOAT(viewmorph.zoomneeded);
+
+	end = vid.width * vid.height - 1;
+
+	pos = 0;
+
+	// Pre-multiply rollcos and rollsin to use for positional stuff
+	rollcos /= zoomfactor;
+	rollsin /= zoomfactor;
+
+	x1 = -(halfwidth * rollcos - halfheight * rollsin);
+	y1 = -(halfheight * rollcos + halfwidth * rollsin);
+
+#ifdef WOUGHMP_WOUGHMP
+	if (fisheye)
+		viewmorph.x1 = (INT32)(halfwidth - (halfwidth * fabsf(rollcos) + halfheight * fabsf(rollsin)) * fisheyemap[halfwidth]);
+	else
+#endif
+	viewmorph.x1 = (INT32)(halfwidth - (halfwidth * fabsf(rollcos) + halfheight * fabsf(rollsin)));
+	//CONS_Printf("saving %d cols\n", viewmorph.x1);
+
+	// Set ceilingclip and floorclip
+	for (vx = 0; vx < vid.width; vx++)
+	{
+		viewmorph.ceilingclip[vx] = vid.height;
+		viewmorph.floorclip[vx] = -1;
+	}
+	x2 = x1;
+	y2 = y1;
+	for (vx = 0; vx < vid.width; vx++)
+	{
+		INT16 xa, ya, xb, yb;
+		xa = x2+halfwidth;
+		ya = y2+halfheight-1;
+		xb = vid.width-1-xa;
+		yb = vid.height-1-ya;
+
+		viewmorph.ceilingclip[xa] = min(viewmorph.ceilingclip[xa], ya);
+		viewmorph.floorclip[xa] = max(viewmorph.floorclip[xa], ya);
+		viewmorph.ceilingclip[xb] = min(viewmorph.ceilingclip[xb], yb);
+		viewmorph.floorclip[xb] = max(viewmorph.floorclip[xb], yb);
+		x2 += rollcos;
+		y2 += rollsin;
+	}
+	x2 = x1;
+	y2 = y1;
+	for (vy = 0; vy < vid.height; vy++)
+	{
+		INT16 xa, ya, xb, yb;
+		xa = x2+halfwidth;
+		ya = y2+halfheight;
+		xb = vid.width-1-xa;
+		yb = vid.height-1-ya;
+
+		viewmorph.ceilingclip[xa] = min(viewmorph.ceilingclip[xa], ya);
+		viewmorph.floorclip[xa] = max(viewmorph.floorclip[xa], ya);
+		viewmorph.ceilingclip[xb] = min(viewmorph.ceilingclip[xb], yb);
+		viewmorph.floorclip[xb] = max(viewmorph.floorclip[xb], yb);
+		x2 -= rollsin;
+		y2 += rollcos;
+	}
+
+	//CONS_Printf("Top left corner is %f %f\n", x1, y1);
+
+#ifdef WOUGHMP_WOUGHMP
+	if (fisheye)
+	{
+		for (vy = 0; vy < halfheight; vy++)
+		{
+			x2 = x1;
+			y2 = y1;
+			x1 -= rollsin;
+			y1 += rollcos;
+
+			for (vx = 0; vx < vid.width; vx++)
+			{
+				usedx = halfwidth + x2*fisheyemap[(int) floorf(fabsf(y2*zoomfactor))];
+				usedy = halfheight + y2*fisheyemap[(int) floorf(fabsf(x2*zoomfactor))];
+
+				usedpos = usedx + usedy*vid.width;
+
+				viewmorph.scrmap[pos] = usedpos;
+				viewmorph.scrmap[end-pos] = end-usedpos;
+
+				x2 += rollcos;
+				y2 += rollsin;
+				pos++;
+			}
+		}
+	}
+	else
+	{
+#endif
+	x1 += halfwidth;
+	y1 += halfheight;
+
+	for (vy = 0; vy < halfheight; vy++)
+	{
+		x2 = x1;
+		y2 = y1;
+		x1 -= rollsin;
+		y1 += rollcos;
+
+		for (vx = 0; vx < vid.width; vx++)
+		{
+			usedx = x2;
+			usedy = y2;
+
+			usedpos = usedx + usedy*vid.width;
+
+			viewmorph.scrmap[pos] = usedpos;
+			viewmorph.scrmap[end-pos] = end-usedpos;
+
+			x2 += rollcos;
+			y2 += rollsin;
+			pos++;
+		}
+	}
+#ifdef WOUGHMP_WOUGHMP
+	}
+#endif
+
+	viewmorph.use = true;
+}
+
+void R_ApplyViewMorph(void)
+{
+	UINT8 *tmpscr = screens[4];
+	UINT8 *srcscr = screens[0];
+	INT32 p, end = vid.width * vid.height;
+
+	if (!viewmorph.use)
+		return;
+
+	if (cv_debug & DBG_VIEWMORPH)
+	{
+		UINT8 border = 32;
+		UINT8 grid = 160;
+		INT32 ws = vid.width / 4;
+		INT32 hs = vid.width * (vid.height / 4);
+
+		memcpy(tmpscr, srcscr, vid.width*vid.height);
+		for (p = 0; p < vid.width; p++)
+		{
+			tmpscr[viewmorph.scrmap[p]] = border;
+			tmpscr[viewmorph.scrmap[p + hs]] = grid;
+			tmpscr[viewmorph.scrmap[p + hs*2]] = grid;
+			tmpscr[viewmorph.scrmap[p + hs*3]] = grid;
+			tmpscr[viewmorph.scrmap[end - 1 - p]] = border;
+		}
+		for (p = vid.width; p < end; p += vid.width)
+		{
+			tmpscr[viewmorph.scrmap[p]] = border;
+			tmpscr[viewmorph.scrmap[p + ws]] = grid;
+			tmpscr[viewmorph.scrmap[p + ws*2]] = grid;
+			tmpscr[viewmorph.scrmap[p + ws*3]] = grid;
+			tmpscr[viewmorph.scrmap[end - 1 - p]] = border;
+		}
+	}
+	else
+		for (p = 0; p < end; p++)
+			tmpscr[p] = srcscr[viewmorph.scrmap[p]];
+
+	VID_BlitLinearScreen(tmpscr, screens[0],
+			vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.width);
+}
+
 
 //
 // R_SetViewSize
@@ -676,7 +1041,7 @@ void R_ExecuteSetViewSize(void)
 	centeryfrac = centery<<FRACBITS;
 
 	fov = FixedAngle(cv_fov.value/2) + ANGLE_90;
-	fovtan = FINETANGENT(fov >> ANGLETOFINESHIFT);
+	fovtan = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
 	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
 		fovtan = 17*fovtan/10;
 
@@ -833,7 +1198,7 @@ static void R_SetupFreelook(void)
 
 	if (rendermode == render_soft)
 	{
-		dy = (AIMINGTODY(aimingangle)/fovtan) * viewwidth/BASEVIDWIDTH;
+		dy = (AIMINGTODY(aimingangle)>>FRACBITS) * viewwidth/BASEVIDWIDTH;
 		yslope = &yslopetab[viewheight*8 - (viewheight/2 + dy)];
 	}
 	centery = (viewheight/2) + dy;
@@ -844,6 +1209,7 @@ void R_SkyboxFrame(player_t *player)
 {
 	camera_t *thiscam = &camera[0];
 	UINT8 i;
+	vector3_t pos;
 
 	if (splitscreen)
 	{
@@ -869,20 +1235,20 @@ void R_SkyboxFrame(player_t *player)
 #endif
 	if (player->awayviewtics)
 	{
-		aimingangle = player->awayviewaiming;
-		viewangle = player->awayviewmobj->angle;
+		aimingangle = R_LerpAngle(player, awayviewaiming);
+		viewangle = ((viewmobj->flags & (MF_SCENERY|MF_NOTHINK)) && !viewmobj->lerp.angle) ? viewmobj->angle : R_LerpAngle(player->awayviewmobj, angle);
 	}
 	else if (thiscam->chase)
 	{
-		aimingangle = thiscam->aiming;
-		viewangle = thiscam->angle;
+		aimingangle = R_LerpAngle(thiscam, aiming);
+		viewangle = R_LerpAngle(thiscam, angle);
 	}
 	else
 	{
-		aimingangle = player->aiming;
-		viewangle = player->mo->angle;
+		aimingangle = R_LerpAngle(player, aiming);
+		viewangle = R_LerpAngle(player->mo, angle);
 		if (/*!demo.playback && */player->playerstate != PST_DEAD)
-		{
+		{/*NEEDS LERP*/
 			if (player == &players[consoleplayer])
 			{
 				viewangle = localangle[0]; // WARNING: camera uses this
@@ -906,8 +1272,9 @@ void R_SkyboxFrame(player_t *player)
 
 	viewplayer = player;
 
-	viewx = viewmobj->x;
-	viewy = viewmobj->y;
+	R_LerpMobjPosition(viewmobj, &pos);
+	viewx = pos.x;
+	viewy = pos.y;
 	viewz = 0;
 	if (viewmobj->spawnpoint)
 		viewz = ((fixed_t)viewmobj->spawnpoint->angle)<<FRACBITS;
@@ -919,146 +1286,65 @@ void R_SkyboxFrame(player_t *player)
 	if (mapheaderinfo[gamemap-1])
 	{
 		mapheader_t *mh = mapheaderinfo[gamemap-1];
+		fixed_t viewheight_local = 0;
+
 		if (player->awayviewtics)
 		{
-			if (skyboxmo[1])
-			{
-				fixed_t x = 0, y = 0;
-				if (mh->skybox_scalex > 0)
-					x = (player->awayviewmobj->x - skyboxmo[1]->x) / mh->skybox_scalex;
-				else if (mh->skybox_scalex < 0)
-					x = (player->awayviewmobj->x - skyboxmo[1]->x) * -mh->skybox_scalex;
-
-				if (mh->skybox_scaley > 0)
-					y = (player->awayviewmobj->y - skyboxmo[1]->y) / mh->skybox_scaley;
-				else if (mh->skybox_scaley < 0)
-					y = (player->awayviewmobj->y - skyboxmo[1]->y) * -mh->skybox_scaley;
-
-				if (viewmobj->angle == 0)
-				{
-					viewx += x;
-					viewy += y;
-				}
-				else if (viewmobj->angle == ANGLE_90)
-				{
-					viewx -= y;
-					viewy += x;
-				}
-				else if (viewmobj->angle == ANGLE_180)
-				{
-					viewx -= x;
-					viewy -= y;
-				}
-				else if (viewmobj->angle == ANGLE_270)
-				{
-					viewx += y;
-					viewy -= x;
-				}
-				else
-				{
-					angle_t ang = viewmobj->angle>>ANGLETOFINESHIFT;
-					viewx += FixedMul(x,FINECOSINE(ang)) - FixedMul(y,  FINESINE(ang));
-					viewy += FixedMul(x,  FINESINE(ang)) + FixedMul(y,FINECOSINE(ang));
-				}
-			}
-			if (mh->skybox_scalez > 0)
-				viewz += (player->awayviewmobj->z + 20*FRACUNIT) / mh->skybox_scalez;
-			else if (mh->skybox_scalez < 0)
-				viewz += (player->awayviewmobj->z + 20*FRACUNIT) * -mh->skybox_scalez;
+			R_LerpMobjPosition(player->awayviewmobj, &pos);
+			viewheight_local = 20*FRACUNIT;
 		}
 		else if (thiscam->chase)
 		{
-			if (skyboxmo[1])
-			{
-				fixed_t x = 0, y = 0;
-				if (mh->skybox_scalex > 0)
-					x = (thiscam->x - skyboxmo[1]->x) / mh->skybox_scalex;
-				else if (mh->skybox_scalex < 0)
-					x = (thiscam->x - skyboxmo[1]->x) * -mh->skybox_scalex;
-
-				if (mh->skybox_scaley > 0)
-					y = (thiscam->y - skyboxmo[1]->y) / mh->skybox_scaley;
-				else if (mh->skybox_scaley < 0)
-					y = (thiscam->y - skyboxmo[1]->y) * -mh->skybox_scaley;
-
-				if (viewmobj->angle == 0)
-				{
-					viewx += x;
-					viewy += y;
-				}
-				else if (viewmobj->angle == ANGLE_90)
-				{
-					viewx -= y;
-					viewy += x;
-				}
-				else if (viewmobj->angle == ANGLE_180)
-				{
-					viewx -= x;
-					viewy -= y;
-				}
-				else if (viewmobj->angle == ANGLE_270)
-				{
-					viewx += y;
-					viewy -= x;
-				}
-				else
-				{
-					angle_t ang = viewmobj->angle>>ANGLETOFINESHIFT;
-					viewx += FixedMul(x,FINECOSINE(ang)) - FixedMul(y,  FINESINE(ang));
-					viewy += FixedMul(x,  FINESINE(ang)) + FixedMul(y,FINECOSINE(ang));
-				}
-			}
-			if (mh->skybox_scalez > 0)
-				viewz += (thiscam->z + (thiscam->height>>1)) / mh->skybox_scalez;
-			else if (mh->skybox_scalez < 0)
-				viewz += (thiscam->z + (thiscam->height>>1)) * -mh->skybox_scalez;
+			R_LerpCameraPosition(thiscam, &pos);
+			viewheight_local = thiscam->height >> 1;
 		}
 		else
-		{
-			if (skyboxmo[1])
-			{
-				fixed_t x = 0, y = 0;
-				if (mh->skybox_scalex > 0)
-					x = (player->mo->x - skyboxmo[1]->x) / mh->skybox_scalex;
-				else if (mh->skybox_scalex < 0)
-					x = (player->mo->x - skyboxmo[1]->x) * -mh->skybox_scalex;
-				if (mh->skybox_scaley > 0)
-					y = (player->mo->y - skyboxmo[1]->y) / mh->skybox_scaley;
-				else if (mh->skybox_scaley < 0)
-					y = (player->mo->y - skyboxmo[1]->y) * -mh->skybox_scaley;
+			R_LerpMobjPosition(player->mo, &pos);
 
-				if (viewmobj->angle == 0)
-				{
-					viewx += x;
-					viewy += y;
-				}
-				else if (viewmobj->angle == ANGLE_90)
-				{
-					viewx -= y;
-					viewy += x;
-				}
-				else if (viewmobj->angle == ANGLE_180)
-				{
-					viewx -= x;
-					viewy -= y;
-				}
-				else if (viewmobj->angle == ANGLE_270)
-				{
-					viewx += y;
-					viewy -= x;
-				}
-				else
-				{
-					angle_t ang = viewmobj->angle>>ANGLETOFINESHIFT;
-					viewx += FixedMul(x,FINECOSINE(ang)) - FixedMul(y,  FINESINE(ang));
-					viewy += FixedMul(x,  FINESINE(ang)) + FixedMul(y,FINECOSINE(ang));
-				}
+		if (skyboxmo[1])
+		{
+			fixed_t x = 0, y = 0;
+			if (mh->skybox_scalex > 0)
+				x = (pos.x - skyboxmo[1]->x) / mh->skybox_scalex;
+			else if (mh->skybox_scalex < 0)
+				x = (pos.x - skyboxmo[1]->x) * -mh->skybox_scalex;
+
+			if (mh->skybox_scaley > 0)
+				y = (pos.y - skyboxmo[1]->y) / mh->skybox_scaley;
+			else if (mh->skybox_scaley < 0)
+				y = (pos.y - skyboxmo[1]->y) * -mh->skybox_scaley;
+
+			if (viewmobj->angle == 0)
+			{
+				viewx += x;
+				viewy += y;
 			}
-			if (mh->skybox_scalez > 0)
-				viewz += player->viewz / mh->skybox_scalez;
-			else if (mh->skybox_scalez < 0)
-				viewz += player->viewz * -mh->skybox_scalez;
+			else if (viewmobj->angle == ANGLE_90)
+			{
+				viewx -= y;
+				viewy += x;
+			}
+			else if (viewmobj->angle == ANGLE_180)
+			{
+				viewx -= x;
+				viewy -= y;
+			}
+			else if (viewmobj->angle == ANGLE_270)
+			{
+				viewx += y;
+				viewy -= x;
+			}
+			else
+			{
+				angle_t ang = R_LerpAngle(viewmobj, angle)>>ANGLETOFINESHIFT;
+				viewx += FixedMul(x,FINECOSINE(ang)) - FixedMul(y,  FINESINE(ang));
+				viewy += FixedMul(x,  FINESINE(ang)) + FixedMul(y,FINECOSINE(ang));
+			}
 		}
+		if (mh->skybox_scalez > 0)
+			viewz += (pos.z + viewheight_local) / mh->skybox_scalez;
+		else if (mh->skybox_scalez < 0)
+			viewz += (pos.z + viewheight_local) * -mh->skybox_scalez;
 	}
 
 	if (viewmobj->subsector)
@@ -1076,6 +1362,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 {
 	camera_t *thiscam;
 	boolean chasecam = false;
+	vector3_t pos;
 
 	if (splitscreen > 2 && player == &players[displayplayers[3]])
 	{
@@ -1117,31 +1404,46 @@ void R_SetupFrame(player_t *player, boolean skybox)
 		// cut-away view stuff
 		viewmobj = player->awayviewmobj; // should be a MT_ALTVIEWMAN
 		I_Assert(viewmobj != NULL);
-		viewz = viewmobj->z + 20*FRACUNIT;
-		aimingangle = player->awayviewaiming;
-		viewangle = viewmobj->angle;
+		viewz = 20*FRACUNIT;
+		aimingangle = R_LerpAngle(player, awayviewaiming);
+		viewangle = ((viewmobj->flags & (MF_SCENERY|MF_NOTHINK)) && !viewmobj->lerp.angle) ? viewmobj->angle : R_LerpAngle(viewmobj, angle);
+		R_LerpMobjPosition(viewmobj, &pos);
 	}
 	else if (!player->spectator && chasecam)
 	// use outside cam view
 	{
 		viewmobj = NULL;
-		viewz = thiscam->z + (thiscam->height>>1);
-		aimingangle = thiscam->aiming;
-		viewangle = thiscam->angle;
+		viewz = (thiscam->height>>1);
+		if (demo.freecam)
+		{
+			pos.x = thiscam->x;
+			pos.y = thiscam->y;
+			pos.z = thiscam->z;
+			aimingangle = thiscam->aiming;
+			viewangle = thiscam->angle;
+		}
+		else
+		{
+			aimingangle = R_LerpAngle(thiscam, aiming);
+			viewangle = R_LerpAngle(thiscam, angle);
+			R_LerpCameraPosition(thiscam, &pos);
+		}
 	}
 	else
 	// use the player's eyes view
 	{
-		viewz = player->viewz;
 
 		viewmobj = player->mo;
 		I_Assert(viewmobj != NULL);
 
-		aimingangle = player->aiming;
-		viewangle = viewmobj->angle;
+		viewz = player->viewz - player->mo->z;
+		R_LerpMobjPosition(viewmobj, &pos);
+
+		aimingangle = R_LerpAngle(player, aiming);
+		viewangle = R_LerpAngle(viewmobj, angle);
 
 		if (!demo.playback && player->playerstate != PST_DEAD)
-		{
+		{/* NEEDS LERP */
 			if (player == &players[consoleplayer])
 			{
 				viewangle = localangle[0]; // WARNING: camera uses this
@@ -1162,34 +1464,14 @@ void R_SetupFrame(player_t *player, boolean skybox)
 			}
 		}
 	}
-	viewz += quake.z;
 
 	viewplayer = player;
 
-	if (chasecam && !player->awayviewtics && !player->spectator)
-	{
-		viewx = thiscam->x;
-		viewy = thiscam->y;
-		viewx += quake.x;
-		viewy += quake.y;
+	viewx = pos.x + quake.x;
+	viewy = pos.y + quake.y;
+	viewz += pos.z + quake.z;
 
-		if (thiscam->subsector && thiscam->subsector->sector)
-			viewsector = thiscam->subsector->sector;
-		else
-			viewsector = R_PointInSubsector(viewx, viewy)->sector;
-	}
-	else
-	{
-		viewx = viewmobj->x;
-		viewy = viewmobj->y;
-		viewx += quake.x;
-		viewy += quake.y;
-
-		if (viewmobj->subsector && thiscam->subsector->sector)
-			viewsector = viewmobj->subsector->sector;
-		else
-			viewsector = R_PointInSubsector(viewx, viewy)->sector;
-	}
+	viewsector = R_PointInSubsector(viewx, viewy)->sector;
 
 	viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
@@ -1389,9 +1671,22 @@ void R_RenderPlayerView(player_t *player)
 	validcount++;
 
 	// Clear buffers.
-	R_ClearClipSegs();
-	R_ClearDrawSegs();
 	R_ClearPlanes();
+	if (viewmorph.use)
+	{
+		portalclipstart = viewmorph.x1;
+		portalclipend = viewwidth-viewmorph.x1-1;
+		R_PortalClearClipSegs(portalclipstart, portalclipend);
+		memcpy(ceilingclip, viewmorph.ceilingclip, sizeof(INT16)*vid.width);
+		memcpy(floorclip, viewmorph.floorclip, sizeof(INT16)*vid.width);
+	}
+	else
+	{
+		portalclipstart = 0;
+		portalclipend = viewwidth-1;
+		R_ClearClipSegs();
+	}
+	R_ClearDrawSegs();
 	R_ClearSprites();
 #ifdef FLOORSPLATS
 	R_ClearVisibleFloorSplats();
@@ -1532,6 +1827,10 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_cam4_speed);
 	CV_RegisterVar(&cv_cam4_rotate);
 	CV_RegisterVar(&cv_cam4_rotspeed);
+
+	CV_RegisterVar(&cv_tilting);
+	CV_RegisterVar(&cv_actionmovie);
+	CV_RegisterVar(&cv_windowquake);
 
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);

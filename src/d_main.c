@@ -108,14 +108,16 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 // platform independant focus loss
 UINT8 window_notinfocus = false;
+INT32 window_x;
+INT32 window_y;
 
 //
 // DEMO LOOP
 //
 //static INT32 demosequence;
 static const char *pagename = "MAP1PIC";
-static char *startupwadfiles[MAX_WADFILES];
-static char *startuppwads[MAX_WADFILES];
+static char *startupwadfiles[MAX_WADFILES][2];
+static char *startuppwads[MAX_WADFILES][2];
 
 boolean devparm = false; // started game with -devparm
 
@@ -268,7 +270,7 @@ void D_ProcessEvents(void)
 // added comment : there is a wipe eatch change of the gamestate
 gamestate_t wipegamestate = GS_LEVEL;
 
-static void D_Display(void)
+static boolean D_Display(void)
 {
 	boolean forcerefresh = false;
 	static boolean wipe = false;
@@ -278,7 +280,20 @@ static void D_Display(void)
 	if (!dedicated)
 	{
 		if (nodrawers)
-			return; // for comparative timing/profiling
+			return false; // for comparative timing/profiling
+		if (cv_interpolationmode.value == 1)
+		{
+			static UINT16 frame = 0;
+			UINT16 newframe = I_GetFrameReference(cv_frameratecap.value);
+
+			if (newframe == frame)
+			{
+				I_Sleep();// Sleep in main loop now only happens in 35 fps mode, so sleep here to avoid a full busy loop
+				return false;
+			}
+
+			frame = newframe;
+		}
 
 		// check for change of screen size (video mode)
 		if (setmodeneeded && !wipe)
@@ -286,6 +301,9 @@ static void D_Display(void)
 
 		if (vid.recalc)
 			SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
+
+		if (rendermode == render_soft && !splitscreen)
+			R_CheckViewMorph();
 
 		// change the view size if needed
 		if (setsizeneeded)
@@ -343,7 +361,7 @@ static void D_Display(void)
 	}
 
 	if (dedicated) //bail out after wipe logic
-		return;
+		return false;
 
 	// do buffered drawing
 	switch (gamestate)
@@ -496,6 +514,9 @@ static void D_Display(void)
 
 			if (rendermode == render_soft)
 			{
+					if (!splitscreen)
+						R_ApplyViewMorph();
+
 				for (i = 0; i <= splitscreen; i++)
 				{
 					if (postimgtype[i])
@@ -587,6 +608,7 @@ static void D_Display(void)
 	//
 	if (!wipe)
 	{
+
 		if (cv_netstat.value)
 		{
 			char s[50];
@@ -607,14 +629,35 @@ static void D_Display(void)
 		if (cv_shittyscreen.value)
 			V_DrawVhsEffect(cv_shittyscreen.value == 2);
 
+		/*{
+			// lerp time graph
+			static fixed_t graph[120];
+			static boolean sameframe[120];
+			static UINT8 index = 0;
+			UINT8 i, j;
+
+			index++; index %= 120;
+			graph[index] = lerp_fractic;
+			sameframe[index] = lerp_sameframe;
+
+			for (i = (index+1)%120, j = 0; j < 120; i = (i+1)%120, j++)
+			{
+				V_DrawFill(j, 100 - FixedMul(max(graph[i], graph[(i+119)%120]), 100), 1, FixedMul(abs(graph[i] - graph[(i+119)%120]), 100), 10);
+				V_DrawFill(j, 99 - FixedMul(graph[i], 100), 1, 3, sameframe[i] ? 128 : 161);
+			}
+		}*/
+
 		I_FinishUpdate(); // page flip or blit buffer
 	}
+
+	return true;
 }
 
 // =========================================================================
 // D_SRB2Loop
 // =========================================================================
 
+tic_t lerp_currenttic = 0; fixed_t lerp_fractic; boolean lerp_sameframe;
 tic_t rendergametic;
 
 void D_SRB2Loop(void)
@@ -676,11 +719,45 @@ void D_SRB2Loop(void)
 				debugload--;
 #endif
 
+		if (demo.playback && gamestate == GS_LEVEL)
+			realtics = realtics * cv_playbackspeed.value;
+		
 		if (!realtics && !singletics)
 		{
-			I_Sleep();
+			//I_Sleep();//test
+			if (cv_interpolationmode.value != 0 && gamestate == GS_LEVEL && !(paused || P_AutoPause())) //turn off interpolation when paused
+			{
+				if (rendertimeout == entertic+TICRATE/17)
+				{
+					fixed_t old = lerp_fractic;
+
+					if (demo.playback && gamestate == GS_LEVEL)
+						lerp_fractic = (I_GetFracTime() * cv_playbackspeed.value) % FRACUNIT - cv_extrapolation.value;
+					else
+						lerp_fractic = I_GetFracTime() - cv_extrapolation.value;
+
+					while (lerp_fractic < old)
+						lerp_fractic += FRACUNIT;
+				}
+
+				if (D_Display())
+				{
+					if (moviemode)
+						if (!lerp_sameframe || (cv_gifrecordinterpolatedframes.value && lerp_sameframe))
+							M_SaveFrame();
+					if (takescreenshot) // Only take screenshots after drawing.
+						M_DoScreenShot();
+
+					lerp_sameframe = true;
+				}
+			}
+			else
+				I_Sleep();// Only sleep here in 35 fps mode. Frame rate cap has a separate sleep in D_Display.
+
 			continue;
 		}
+
+		lerp_sameframe = false;
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -700,21 +777,39 @@ void D_SRB2Loop(void)
 			rendertimeout = entertic+TICRATE/17;
 
 			// Update display, next frame, with current state.
-			D_Display();
+			if (cv_interpolationmode.value == 0 || (paused || P_AutoPause()))
+				lerp_fractic = 0;
+			else if (demo.playback && gamestate == GS_LEVEL)
+				lerp_fractic = (I_GetFracTime() * cv_playbackspeed.value) % FRACUNIT - cv_extrapolation.value;
+			else
+				lerp_fractic = I_GetFracTime() - cv_extrapolation.value;
+			if (D_Display())
+			{
+				if (moviemode)
+					if (!lerp_sameframe || (cv_gifrecordinterpolatedframes.value && lerp_sameframe))
+						M_SaveFrame();
+				if (takescreenshot) // Only take screenshots after drawing.
+					M_DoScreenShot();
 
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
+				lerp_sameframe = true;
+			}
 		}
 		else if (rendertimeout < entertic) // in case the server hang or netsplit
 		{
-			D_Display();
+			lerp_fractic = FRACUNIT - cv_extrapolation.value;
 
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
+			if (D_Display())
+			{
+				//CONS_Printf("Hang part got run!\n");
+
+				if (moviemode)
+					if (!lerp_sameframe || (cv_gifrecordinterpolatedframes.value && lerp_sameframe))
+						M_SaveFrame();
+				if (takescreenshot) // Only take screenshots after drawing.
+					M_DoScreenShot();
+
+				lerp_sameframe = true;
+			}
 		}
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
@@ -816,34 +911,46 @@ void D_StartTitle(void)
 		V_SetPaletteLump("PLAYPAL");*/
 }
 
+static char *
+Daddfilestrdup (const char *s)
+{
+	char *p;
+	if (!( p = strdup(s) ))
+	{
+		I_Error("No more free memory to AddFile %s",s);
+	}
+	return p;
+}
+
 //
 // D_AddFile
 //
-static void D_AddFile(const char *file, char **filearray)
+static void D_AddFile2(const char *file, const char *lumpname, char *(*filearray)[2])
 {
 	size_t pnumwadfiles;
-	char *newfile;
 
-	for (pnumwadfiles = 0; filearray[pnumwadfiles]; pnumwadfiles++)
+	for (pnumwadfiles = 0; filearray[pnumwadfiles][0]; pnumwadfiles++)
 		;
 
-	newfile = malloc(strlen(file) + 1);
-	if (!newfile)
-	{
-		I_Error("No more free memory to AddFile %s",file);
-	}
-	strcpy(newfile, file);
-
-	filearray[pnumwadfiles] = newfile;
+	filearray[pnumwadfiles][0] = Daddfilestrdup(file);
+	filearray[pnumwadfiles][1] = ( (lumpname) ? Daddfilestrdup(lumpname) : 0 );
 }
 
-static inline void D_CleanFile(char **filearray)
+static void
+D_AddFile (const char *file, char *(*filearray)[2])
+{
+	D_AddFile2(file, 0, filearray);
+}
+
+static inline void D_CleanFile(char *(*filearray)[2])
 {
 	size_t pnumwadfiles;
-	for (pnumwadfiles = 0; filearray[pnumwadfiles]; pnumwadfiles++)
+	for (pnumwadfiles = 0; filearray[pnumwadfiles][0]; pnumwadfiles++)
 	{
-		free(filearray[pnumwadfiles]);
-		filearray[pnumwadfiles] = NULL;
+		free(filearray[pnumwadfiles][0]);
+		free(filearray[pnumwadfiles][1]);
+		filearray[pnumwadfiles][0] = NULL;
+		filearray[pnumwadfiles][1] = NULL;
 	}
 }
 
@@ -1153,32 +1260,28 @@ void D_SRB2Main(void)
 					D_AddFile(s, startuppwads);
 			}
 		}
+
+		if (M_CheckParm("-musicfile"))
+		{
+			while (M_IsNextParm())
+			{
+				const char *f;
+				const char *u;
+				f = M_GetNextParm();
+				u = M_GetNextParm();
+				if (!u)
+				{
+					I_Error("-musicfile missing second name: -musicfile <file> <name>");
+				}
+				D_AddFile2(f, u, startuppwads);
+			}
+		}
 	}
 
 	// get map from parms
 
 	if (M_CheckParm("-server") || dedicated)
 		netgame = server = true;
-
-	if (M_CheckParm("-warp") && M_IsNextParm())
-	{
-		const char *word = M_GetNextParm();
-		char ch; // use this with sscanf to catch non-digits with
-		if (fastncmp(word, "MAP", 3)) // MAPxx name
-			pstartmap = M_MapNumber(word[3], word[4]);
-		else if (sscanf(word, "%d%c", &pstartmap, &ch) != 1) // a plain number
-			I_Error("Cannot warp to map %s (invalid map name)\n", word);
-		// Don't check if lump exists just yet because the wads haven't been loaded!
-		// Just do a basic range check here.
-		if (pstartmap < 1 || pstartmap > NUMMAPS)
-			I_Error("Cannot warp to map %d (out of range)\n", pstartmap);
-		else
-		{
-			if (!M_CheckParm("-server"))
-				G_SetGameModified(true, true);
-			autostart = true;
-		}
-	}
 
 	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
 	Z_Init();
@@ -1358,6 +1461,23 @@ void D_SRB2Main(void)
 	savedata.lives = 0; // flag this as not-used
 
 	//------------------------------------------------ COMMAND LINE PARAMS
+
+	// this must be done after loading gamedata,
+	// to avoid setting off the corrupted gamedata code in G_LoadGameData if a SOC with custom gamedata is added
+	// -- Monster Iestyn 20/02/20
+	if (M_CheckParm("-warp") && M_IsNextParm())
+	{
+		const char *word = M_GetNextParm();
+		pstartmap = G_FindMapByNameOrCode(word, 0);
+		if (! pstartmap)
+			I_Error("Cannot find a map remotely named '%s'\n", word);
+		else
+		{
+			if (!M_CheckParm("-server"))
+				G_SetGameModified(true, true);
+			autostart = true;
+		}
+	}
 
 	// Initialize CD-Audio
 	if (M_CheckParm("-usecd") && !dedicated)

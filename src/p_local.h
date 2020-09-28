@@ -107,6 +107,11 @@ typedef struct camera_s
 
 	// SRB2Kart: camera pans while drifting
 	fixed_t pan;
+
+	struct {
+		fixed_t x, y, z;
+		angle_t angle, aiming;
+	} lerp; // Previous positions for interpolation
 } camera_t;
 
 // demo freecam or something before i commit die
@@ -135,6 +140,11 @@ extern consvar_t cv_cam3_speed, cv_cam3_rotate, cv_cam3_rotspeed;
 
 extern consvar_t cv_cam4_dist, cv_cam4_still, cv_cam4_height;
 extern consvar_t cv_cam4_speed, cv_cam4_rotate, cv_cam4_rotspeed;
+
+extern consvar_t cv_tilting;
+
+extern consvar_t cv_actionmovie;
+extern consvar_t cv_windowquake;
 
 extern fixed_t t_cam_dist, t_cam_height, t_cam_rotate;
 extern fixed_t t_cam2_dist, t_cam2_height, t_cam2_rotate;

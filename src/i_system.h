@@ -46,6 +46,14 @@ UINT32 I_GetFreeMem(UINT32 *total);
 */
 tic_t I_GetTime(void);
 
+/** \brief Returns fraction of the current time in tics.
+*/
+fixed_t I_GetFracTime(void);
+
+/** \brief Returns frame of current second at the specified FPS.
+*/
+UINT16 I_GetFrameReference(UINT16 fps);
+
 /**	\brief	The I_Sleep function
 
 	\return	void
@@ -351,5 +359,7 @@ INT32 I_ClipboardCopy(const char *data, size_t size);
 const char *I_ClipboardPaste(void);
 
 void I_RegisterSysCommands(void);
+
+void I_CursedWindowMovement(int xd, int yd);
 
 #endif

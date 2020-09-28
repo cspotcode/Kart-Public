@@ -519,7 +519,10 @@ static void MasterServer_OnChange(void)
 	*/
 	if (
 			! cv_masterserver.changed &&
-			strcmp(cv_masterserver.string, "ms.srb2.org:28900") == 0
+			(
+				strcmp(cv_masterserver.string, "ms.srb2.org:28900") == 0 ||
+				strcmp(cv_masterserver.string, "https://mb.srb2.org/MS/0") == 0
+			)
 	){
 		CV_StealthSet(&cv_masterserver, cv_masterserver.defaultvalue);
 	}

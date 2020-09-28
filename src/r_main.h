@@ -15,6 +15,7 @@
 #define __R_MAIN__
 
 #include "d_player.h"
+#include "p_local.h"
 #include "r_data.h"
 
 //
@@ -26,6 +27,7 @@ extern INT32 centerx, centery;
 
 extern fixed_t centerxfrac, centeryfrac;
 extern fixed_t projection, projectiony;
+extern fixed_t fovtan; // field of view
 
 extern size_t validcount, linecount, loopcount, framecount;
 
@@ -44,6 +46,8 @@ extern size_t validcount, linecount, loopcount, framecount;
 #define LIGHTSCALESHIFT 12
 #define MAXLIGHTZ 128
 #define LIGHTZSHIFT 20
+
+#define LIGHTRESOLUTIONFIX (640*fovtan/vid.width)
 
 extern lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 extern lighttable_t *scalelightfixed[MAXLIGHTSCALE];
@@ -68,6 +72,11 @@ subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y);
 
 boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixed_t bottomh, fixed_t toph);
 
+void R_LerpMobjPosition(mobj_t *mo, vector3_t *pos);
+void R_LerpCameraPosition(camera_t *thiscam, vector3_t *pos);
+#define R_LerpAngle(ob, var) ({int32_t diff = (ob)->var - (ob)->lerp.var; (ob)->var + FixedMul(diff, lerp_fractic);})
+#define R_LerpAngleVar(a, b) ((a) + FixedMul((int32_t)((b) - (a)), lerp_fractic))
+
 //
 // REFRESH - the actual rendering functions.
 //
@@ -85,6 +94,9 @@ extern consvar_t cv_tailspickup;
 
 // Called by startup code.
 void R_Init(void);
+
+void R_CheckViewMorph(void);
+void R_ApplyViewMorph(void);
 
 // just sets setsizeneeded true
 extern boolean setsizeneeded;
