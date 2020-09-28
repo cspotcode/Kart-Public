@@ -1085,6 +1085,8 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 
 	R_LerpMobjPosition(spr->mobj, &pos);
 
+	memset(&p, 0x00, sizeof(FTransform));
+
 	// MD2 colormap fix
 	// colormap test
 	if (spr->mobj->subsector)

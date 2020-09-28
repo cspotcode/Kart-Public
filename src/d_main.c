@@ -109,14 +109,16 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 // platform independant focus loss
 UINT8 window_notinfocus = false;
+INT32 window_x;
+INT32 window_y;
 
 //
 // DEMO LOOP
 //
 //static INT32 demosequence;
 static const char *pagename = "MAP1PIC";
-static char *startupwadfiles[MAX_WADFILES];
-static char *startuppwads[MAX_WADFILES];
+static char *startupwadfiles[MAX_WADFILES][2];
+static char *startuppwads[MAX_WADFILES][2];
 
 boolean devparm = false; // started game with -devparm
 
@@ -300,6 +302,9 @@ static boolean D_Display(void)
 
 		if (vid.recalc)
 			SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
+
+		if (rendermode == render_soft && !splitscreen)
+			R_CheckViewMorph();
 
 		// change the view size if needed
 		if (setsizeneeded)
@@ -511,6 +516,9 @@ static boolean D_Display(void)
 
 			if (rendermode == render_soft)
 			{
+					if (!splitscreen)
+						R_ApplyViewMorph();
+
 				for (i = 0; i <= splitscreen; i++)
 				{
 					if (postimgtype[i])
@@ -921,34 +929,46 @@ void D_StartTitle(void)
 		V_SetPaletteLump("PLAYPAL");*/
 }
 
+static char *
+Daddfilestrdup (const char *s)
+{
+	char *p;
+	if (!( p = strdup(s) ))
+	{
+		I_Error("No more free memory to AddFile %s",s);
+	}
+	return p;
+}
+
 //
 // D_AddFile
 //
-static void D_AddFile(const char *file, char **filearray)
+static void D_AddFile2(const char *file, const char *lumpname, char *(*filearray)[2])
 {
 	size_t pnumwadfiles;
-	char *newfile;
 
-	for (pnumwadfiles = 0; filearray[pnumwadfiles]; pnumwadfiles++)
+	for (pnumwadfiles = 0; filearray[pnumwadfiles][0]; pnumwadfiles++)
 		;
 
-	newfile = malloc(strlen(file) + 1);
-	if (!newfile)
-	{
-		I_Error("No more free memory to AddFile %s",file);
-	}
-	strcpy(newfile, file);
-
-	filearray[pnumwadfiles] = newfile;
+	filearray[pnumwadfiles][0] = Daddfilestrdup(file);
+	filearray[pnumwadfiles][1] = ( (lumpname) ? Daddfilestrdup(lumpname) : 0 );
 }
 
-static inline void D_CleanFile(char **filearray)
+static void
+D_AddFile (const char *file, char *(*filearray)[2])
+{
+	D_AddFile2(file, 0, filearray);
+}
+
+static inline void D_CleanFile(char *(*filearray)[2])
 {
 	size_t pnumwadfiles;
-	for (pnumwadfiles = 0; filearray[pnumwadfiles]; pnumwadfiles++)
+	for (pnumwadfiles = 0; filearray[pnumwadfiles][0]; pnumwadfiles++)
 	{
-		free(filearray[pnumwadfiles]);
-		filearray[pnumwadfiles] = NULL;
+		free(filearray[pnumwadfiles][0]);
+		free(filearray[pnumwadfiles][1]);
+		filearray[pnumwadfiles][0] = NULL;
+		filearray[pnumwadfiles][1] = NULL;
 	}
 }
 
@@ -1258,32 +1278,28 @@ void D_SRB2Main(void)
 					D_AddFile(s, startuppwads);
 			}
 		}
+
+		if (M_CheckParm("-musicfile"))
+		{
+			while (M_IsNextParm())
+			{
+				const char *f;
+				const char *u;
+				f = M_GetNextParm();
+				u = M_GetNextParm();
+				if (!u)
+				{
+					I_Error("-musicfile missing second name: -musicfile <file> <name>");
+				}
+				D_AddFile2(f, u, startuppwads);
+			}
+		}
 	}
 
 	// get map from parms
 
 	if (M_CheckParm("-server") || dedicated)
 		netgame = server = true;
-
-	if (M_CheckParm("-warp") && M_IsNextParm())
-	{
-		const char *word = M_GetNextParm();
-		char ch; // use this with sscanf to catch non-digits with
-		if (fastncmp(word, "MAP", 3)) // MAPxx name
-			pstartmap = M_MapNumber(word[3], word[4]);
-		else if (sscanf(word, "%d%c", &pstartmap, &ch) != 1) // a plain number
-			I_Error("Cannot warp to map %s (invalid map name)\n", word);
-		// Don't check if lump exists just yet because the wads haven't been loaded!
-		// Just do a basic range check here.
-		if (pstartmap < 1 || pstartmap > NUMMAPS)
-			I_Error("Cannot warp to map %d (out of range)\n", pstartmap);
-		else
-		{
-			if (!M_CheckParm("-server"))
-				G_SetGameModified(true, true);
-			autostart = true;
-		}
-	}
 
 	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
 	Z_Init();
@@ -1463,6 +1479,23 @@ void D_SRB2Main(void)
 	savedata.lives = 0; // flag this as not-used
 
 	//------------------------------------------------ COMMAND LINE PARAMS
+
+	// this must be done after loading gamedata,
+	// to avoid setting off the corrupted gamedata code in G_LoadGameData if a SOC with custom gamedata is added
+	// -- Monster Iestyn 20/02/20
+	if (M_CheckParm("-warp") && M_IsNextParm())
+	{
+		const char *word = M_GetNextParm();
+		pstartmap = G_FindMapByNameOrCode(word, 0);
+		if (! pstartmap)
+			I_Error("Cannot find a map remotely named '%s'\n", word);
+		else
+		{
+			if (!M_CheckParm("-server"))
+				G_SetGameModified(true, true);
+			autostart = true;
+		}
+	}
 
 	// Initialize CD-Audio
 	if (M_CheckParm("-usecd") && !dedicated)

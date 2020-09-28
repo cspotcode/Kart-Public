@@ -79,6 +79,7 @@ CV_PossibleValue_t kartspeed_cons_t[] = {
 
 static boolean execversion_enabled = false;
 consvar_t cv_execversion = {"execversion","1",CV_CALL,CV_Unsigned, CV_EnforceExecVersion, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_birdmod = {"birdmod", "0", CV_SAVE|CV_NOSHOWHELP, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // for default joyaxis detection
 #if 0
@@ -350,6 +351,40 @@ size_t COM_CheckParm(const char *check)
 	for (i = 1; i < com_argc; i++)
 		if (!strcasecmp(check, com_argv[i]))
 			return i;
+	return 0;
+}
+
+/** \brief COM_CheckParm, but checks only the start of each argument.
+  *        E.g. checking for "-no" would match "-noerror" too.
+  */
+size_t COM_CheckPartialParm(const char *check)
+{
+	int  len;
+	size_t i;
+
+	len = strlen(check);
+
+	for (i = 1; i < com_argc; i++)
+	{
+		if (strncasecmp(check, com_argv[i], len) == 0)
+			return i;
+	}
+	return 0;
+}
+
+/** Find the first argument that starts with a hyphen (-).
+  * \return The index of the argument, or 0
+  *         if there are no such arguments.
+  */
+size_t COM_FirstOption(void)
+{
+	size_t i;
+
+	for (i = 1; i < com_argc; i++)
+	{
+		if (com_argv[i][0] == '-')/* options start with a hyphen */
+			return i;
+	}
 	return 0;
 }
 

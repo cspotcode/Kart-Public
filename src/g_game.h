@@ -112,6 +112,7 @@ extern INT16 rw_maximums[NUM_WEAPONS];
 // used in game menu
 extern consvar_t cv_chatwidth, cv_chatnotifications, cv_chatheight, cv_chattime, cv_consolechat, cv_chatbacktint, cv_chatspamprotection/*, cv_compactscoreboard*/;
 extern consvar_t cv_songcredits;
+extern consvar_t cv_showfreeplay;
 extern consvar_t cv_pauseifunfocused;
 //extern consvar_t cv_crosshair, cv_crosshair2, cv_crosshair3, cv_crosshair4;
 extern consvar_t cv_invertmouse/*, cv_alwaysfreelook, cv_chasefreelook, cv_mousemove*/;
@@ -125,6 +126,16 @@ extern consvar_t cv_turnaxis4,cv_moveaxis4,cv_brakeaxis4,cv_aimaxis4,cv_lookaxis
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
 
 extern consvar_t cv_driftsparkpulse;
+
+extern consvar_t cv_invincmusicfade;
+extern consvar_t cv_growmusicfade;
+
+extern consvar_t cv_respawnfademusicout;
+extern consvar_t cv_respawnfademusicback;
+
+extern consvar_t cv_resetspecialmusic;
+
+extern consvar_t cv_resume;
 
 typedef enum
 {
@@ -173,6 +184,30 @@ void G_PlayerReborn(INT32 player);
 void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer,
 	boolean skipprecutscene);
 char *G_BuildMapTitle(INT32 mapnum);
+
+struct searchdim
+{
+	UINT8 pos;
+	UINT8 siz;
+};
+
+typedef struct
+{
+	INT16  mapnum;
+	UINT8  matchc;
+	struct searchdim *matchd;/* offset that a pattern was matched */
+	UINT8  keywhc;
+	struct searchdim *keywhd;/* ...in KEYWORD */
+	UINT8  total;/* total hits */
+}
+mapsearchfreq_t;
+
+INT32 G_FindMap(const char *query, char **foundmapnamep,
+		mapsearchfreq_t **freqp, INT32 *freqc);
+void G_FreeMapSearch(mapsearchfreq_t *freq, INT32 freqc);
+
+/* Match map name by search + 2 digit map code or map number. */
+INT32 G_FindMapByNameOrCode(const char *query, char **foundmapnamep);
 
 // XMOD spawning
 mapthing_t *G_FindCTFStart(INT32 playernum);

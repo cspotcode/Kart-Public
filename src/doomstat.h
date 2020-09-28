@@ -34,6 +34,7 @@ extern INT16 gamemap;
 extern char mapmusname[7];
 extern UINT16 mapmusflags;
 extern UINT32 mapmusposition;
+extern UINT32 mapmusresume;
 #define MUSIC_TRACKMASK   0x0FFF // ----************
 #define MUSIC_RELOADRESET 0x8000 // *---------------
 #define MUSIC_FORCERESET  0x4000 // -*--------------
@@ -107,6 +108,8 @@ extern boolean digital_disabled;
 extern boolean menuactive; // Menu overlaid?
 extern UINT8 paused; // Game paused?
 extern UINT8 window_notinfocus; // are we in focus? (backend independant -- handles auto pausing and display of "focus lost" message)
+extern INT32 window_x;
+extern INT32 window_y;
 
 extern boolean nodrawers;
 extern boolean noblit;
@@ -190,6 +193,7 @@ extern struct quake
 {
 	// camera offsets and duration
 	fixed_t x,y,z;
+	angle_t roll;
 	UINT16 time;
 
 	// location, radius, and intensity...

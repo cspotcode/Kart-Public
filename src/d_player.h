@@ -369,6 +369,9 @@ typedef struct player_s
 	// bounded/scaled total momentum.
 	//fixed_t bob;
 
+	angle_t viewrollangle;
+	angle_t tilt;
+
 	// Mouse aiming, where the guy is looking at!
 	// It is updated with cmd->aiming.
 	angle_t aiming;
@@ -528,6 +531,7 @@ typedef struct player_s
 
 	struct {
 		angle_t aiming, awayviewaiming, frameangle;
+		angle_t viewrollangle;
 	} lerp;
 } player_t;
 
