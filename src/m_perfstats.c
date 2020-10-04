@@ -289,7 +289,7 @@ void M_DrawPerfStats(void)
 		{
 			int i;
 			// text writing position
-			int x = 5;
+			int x = 2;
 			int y = 4;
 			UINT32 text_color;
 			char tempbuffer[LUA_IDSIZE];
@@ -323,16 +323,16 @@ void M_DrawPerfStats(void)
 					{
 						strcpy(last_mod_name, tempstr);
 						len = (int)strlen(tempstr);
-						if (len > 30)
-							tempstr += len - 30;
+						if (len > 25)
+							tempstr += len - 25;
 						snprintf(s, sizeof s - 1, "%s", tempstr);
 						V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
 						y += 4; // repeated code!
-						if (y > 180)
+						if (y > 192)
 						{
-							y = 10;
-							x += 150;
-							if (x > 155)
+							y = 4;
+							x += 106;
+							if (x > 214)
 								break;
 						}
 					}
@@ -348,16 +348,16 @@ void M_DrawPerfStats(void)
 					text_color = 0; // white
 				}
 				len = (int)strlen(str);
-				if (len > 25)
-					str += len - 25;
-				snprintf(s, sizeof s - 1, "%25s: %u", str, thinkframe_hooks[i].time_taken);
+				if (len > 20)
+					str += len - 20;
+				snprintf(s, sizeof s - 1, "%20s: %u", str, thinkframe_hooks[i].time_taken);
 				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | text_color, s);
 				y += 4;
-				if (y > 180)
+				if (y > 192)
 				{
-					y = 10;
-					x += 150;
-					if (x > 155)
+					y = 4;
+					x += 106;
+					if (x > 214)
 						break;
 				}
 			}
