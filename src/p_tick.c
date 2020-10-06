@@ -650,6 +650,11 @@ void P_Ticker(boolean run)
 #endif
 		}
 
+#ifdef HAVE_BLUA
+		ps_lua_mobjhooks = 0;
+#endif
+		ps_checkposition_calls = 0;
+
 		ps_playerthink_time = I_GetTimeMicros();
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
