@@ -768,6 +768,10 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_lessbattlevotes);
 	CV_RegisterVar(&cv_encorevotes);
 
+#ifdef USE_STUN
+	CV_RegisterVar(&cv_stunserver);
+#endif
+
 	CV_RegisterVar(&cv_discordinvites);
 	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
 
