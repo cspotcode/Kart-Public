@@ -506,6 +506,8 @@ consvar_t cv_lessbattlevotes = {"lessbattlevotes", "Off", CV_SAVE, CV_OnOff, NUL
 static CV_PossibleValue_t encorevotes_cons_t[] = {{0, "One"}, {1, "Except One"}, {0, NULL}};
 consvar_t cv_encorevotes = {"encorevotes", "One", CV_SAVE, encorevotes_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_skinselectspin = {"skinselectspin", "4", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 INT16 gametype = GT_RACE; // SRB2kart
 boolean forceresetplayers = false;
 boolean deferencoremode = false;
@@ -1052,6 +1054,8 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_resume);
 	CV_RegisterVar(&cv_fading);
+	
+	CV_RegisterVar(&cv_skinselectspin);
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
