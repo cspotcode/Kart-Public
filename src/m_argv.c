@@ -59,6 +59,45 @@ INT32 M_CheckParm(const char *check)
 	return 0;
 }
 
+// Check params for srb2kart:// protocol
+INT32 M_CheckProtoParm(const char *check)
+{
+	INT32 i;
+
+	for (i = 1; i < myargc; i++)
+	{
+                if (strncmp(myargv[i], "srb2kart://", 11) == 0)
+		{
+                	if (strncmp(myargv[i]+11, check, strlen(check))==0)
+			{
+				found = i;
+				return i;
+			}
+		}
+	}
+	found = 0;
+	return 0;
+}
+
+// Gets the string after srb2kart://
+const char *M_GetProtoParm(void)
+{
+	INT32 i;
+	static char *string;
+
+	for (i = 1; i < myargc; i++)
+	{
+                if (strncmp(myargv[i], "srb2kart://", 11) == 0)
+		{
+			string = strchr(myargv[i], '/');
+			string = strchr(string+1, '/');
+			string = strchr(string+1, '/')+1;
+			return string;
+		}
+	}
+	return NULL;
+}
+
 /**	\brief the M_IsNextParm
 
   \return  true if there is an available next parameter

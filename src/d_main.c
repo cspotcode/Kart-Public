@@ -76,6 +76,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "keys.h"
 #include "filesrch.h" // refreshdirmenu
 #include "m_perfstats.h"
+#include "d_protocol.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -1254,6 +1255,8 @@ void D_SRB2Main(void)
 #endif
 	}
 
+	D_SetupProtocol(); // ask the user if they want to have cool url protocols
+
 	// rand() needs seeded regardless of password
 	srand((unsigned int)time(NULL));
 
@@ -1639,6 +1642,36 @@ void D_SRB2Main(void)
 		wipegamestate = GS_NULL;
 		return;
 	}
+
+#ifdef HAVE_CURL
+	if (M_CheckProtoParm("replay"))
+	{
+		const char *replayurl = M_GetProtoParm();
+		char *replayname = strrchr(replayurl, '/');
+
+		if (!replayurl || !replayurl)
+			I_Error("REPLAY: Invalid URL.");
+
+#define REPLAYDIR "/DownloadedReplays/"
+		I_mkdir(va("%s%s", srb2home, REPLAYDIR), 0700);
+		CONS_Printf("bruh %s", va("%s%s%s", srb2home, REPLAYDIR, replayname));
+
+		// check if file already exists	
+		if (access(va("%s%s%s", srb2home, REPLAYDIR, replayurl), F_OK )!=0)
+			D_DownloadReplay(replayurl, va("%s%s%s", srb2home, REPLAYDIR, replayname));
+	
+		// add .lmp to identify the EXTERNAL demo file
+		// it is NOT possible to play an internal demo using -playdemo,
+		// rather push a playdemo command.. to do.	
+
+		G_DeferedPlayDemo(va("%s%s", REPLAYDIR, replayname));
+#undef REPLAYDIR
+
+		G_SetGamestate(GS_NULL);
+		wipegamestate = GS_NULL;
+		return;
+	}
+#endif
 
 	/*if (M_CheckParm("-ultimatemode"))
 	{
