@@ -1644,16 +1644,16 @@ void D_SRB2Main(void)
 	}
 
 #ifdef HAVE_CURL
-	if (M_CheckProtoParm("replay"))
+	if (M_CheckProtoParam("replay"))
 	{
-		const char *replayurl = M_GetProtoParm();
+		const char *replayurl = M_GetProtoParam();
 		char *replayname = strrchr(replayurl, '/');
 
-		if (!replayurl || !replayurl)
+		if (!replayname || !replayurl)
 			I_Error("REPLAY: Invalid URL.");
 
 #define REPLAYDIR "/DownloadedReplays/"
-		I_mkdir(va("%s%s", srb2home, REPLAYDIR), 0700);
+		I_mkdir(va("%s%s", srb2home, REPLAYDIR), 0755);
 		CONS_Printf("bruh %s", va("%s%s%s", srb2home, REPLAYDIR, replayname));
 
 		// check if file already exists	
