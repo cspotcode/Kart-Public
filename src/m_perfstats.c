@@ -1,7 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2020 by Sonic Team Junior.
+// Copyright (C) 2020 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -292,7 +291,7 @@ void M_DrawPerfStats(void)
 				ps_tictime - ps_playerthink_time - ps_thinkertime - ps_lua_thinkframe_time);
 			V_DrawSmallString(24, 30, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
 #endif
-			for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
+			for (thinker = thinkercap.next; thinker && thinker != &thinkercap; thinker = thinker->next)
 			{
 				thinkercount++;
 				if (thinker->function.acp1 == (actionf_p1)P_MobjThinker)
