@@ -483,6 +483,8 @@ consvar_t cv_mute = {"mute", "Off", CV_NETVAR|CV_CALL, CV_OnOff, Mute_OnChange, 
 
 consvar_t cv_sleep = {"cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL, -1, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_showtrackaddon = {"showtrackaddon", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 static CV_PossibleValue_t skinselectmenu_t[] = {{SKINMENUTYPE_SCROLL, "Scoll"}, {SKINMENUTYPE_2D, "2d"}, {SKINMENUTYPE_GRID, "Grid"}, {0, NULL}};
 consvar_t cv_skinselectmenu = {"skinselectmenu", "Grid", CV_SAVE, skinselectmenu_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -760,6 +762,8 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_afkkicktimer);
 	CV_RegisterVar(&cv_afkkickignoreadmins);
 	CV_RegisterVar(&cv_afkkickminimumplayers);
+
+	CV_RegisterVar(&cv_showtrackaddon);
 
 #ifdef SEENAMES
 	CV_RegisterVar(&cv_allowseenames);
