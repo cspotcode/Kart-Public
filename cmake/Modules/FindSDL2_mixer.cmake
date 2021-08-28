@@ -14,6 +14,7 @@ find_path(SDL2_MIXER_INCLUDE_DIR
 	NAMES SDL_mixer.h
 	PATHS
 		${SDL2_MIXER_PKGCONF_INCLUDE_DIRS}
+		"${PROJECT_SOURCE_DIR}/libs/SDL2_mixer/include"
 		"/usr/include/SDL2"
 		"/usr/local/include/SDL2"
 )
@@ -25,8 +26,11 @@ find_library(SDL2_MIXER_LIBRARY
 		${SDL2_MIXER_PKGCONF_LIBRARY_DIRS}
 		"/usr/lib"
 		"/usr/local/lib"
+		"${PROJECT_SOURCE_DIR}/libs/SDL2_mixer/i686-w64-mingw32/lib"
 )
 
+# set(SDL2_MIXER_INCLUDE_DIR "$PROJECT_SOURCE_DIR/libs/SDL2_mixer/include")
+# set(SDL2_MIXER_LIBRARY $PROJECT_SOURCE_DIR/libs/SDL2_mixer/lib/x64/SDL2_mixer.lib)
 
 # set include dir variables
 set(SDL2_MIXER_PROCESS_INCLUDES SDL2_MIXER_INCLUDE_DIR)

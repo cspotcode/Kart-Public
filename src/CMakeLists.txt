@@ -219,6 +219,8 @@ set(SRB2_CONFIG_HAVE_PNG ON CACHE BOOL
 	"Enable PNG support. Depends on zlib, so will be disabled if you don't enable that too.")
 set(SRB2_CONFIG_HAVE_ZLIB ON CACHE BOOL
 	"Enable zlib support.")
+set(SRB2_CONFIG_HAVE_DRMINGW ON CACHE BOOL
+	"DRMINGW support.  Always on for windows? Not sure")
 set(SRB2_CONFIG_HAVE_GME ON CACHE BOOL
 	"Enable GME support.")
 set(SRB2_CONFIG_HAVE_DISCORDRPC OFF CACHE BOOL
@@ -236,7 +238,7 @@ set(SRB2_CONFIG_STATIC_OPENGL OFF CACHE BOOL
 
 ### use internal libraries?
 if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
-	set(SRB2_CONFIG_USE_INTERNAL_LIBRARIES OFF CACHE BOOL
+	set(SRB2_CONFIG_USE_INTERNAL_LIBRARIES ON CACHE BOOL
 	"Use SRB2Kart's internal copies of required dependencies (SDL2, PNG, zlib, GME).")
 endif()
 
@@ -326,6 +328,29 @@ if(${SRB2_CONFIG_HAVE_BLUA})
 	prepend_sources(SRB2_BLUA_HEADERS)
 
 	source_group("LUA\\Interpreter" FILES ${SRB2_BLUA_SOURCES} ${SRB2_BLUA_HEADERS})
+endif()
+
+include(Additional)
+if(${SRB2_CONFIG_HAVE_DRMINGW})
+	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
+		set(DRMINGW_FOUND ON)
+		set(DRMINGW_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/drmingw/include)
+		if(${SRB2_SYSTEM_BITS} EQUAL 64)
+			set(DRMINGW_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/dll-binaries/x86_64 -lexchndl")
+			# set(GME_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/gme/win64 -lgme")
+		else() # 32-bit
+			set(DRMINGW_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/dll-binaries/i686 -lexchndl")
+			# set(GME_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/gme/win32 -lgme")
+		endif()
+	else()
+		find_package(DRMINGW)
+	endif()
+	if(${DRMINGW_FOUND})
+		set(SRB2_HAVE_DRMINGW ON)
+		add_definitions(-DHAVE_LIBDRMINGW)
+	else()
+		message(WARNING "You have specified that DRMINGW is available but it was not found.")
+	endif()
 endif()
 
 if(${SRB2_CONFIG_HAVE_GME})

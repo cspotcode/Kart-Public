@@ -16,6 +16,7 @@ find_path(SDL2_INCLUDE_DIR
 		${SDL2_PKGCONF_INCLUDE_DIRS}
 		"/usr/include/SDL2"
 		"/usr/local/include/SDL2"
+		"${PROJECT_SOURCE_DIR}/libs/SDL2/include"
 )
 
 # library
@@ -25,7 +26,11 @@ find_library(SDL2_LIBRARY
 		${SDL2_PKGCONF_LIBRARY_DIRS}
 		"/usr/lib"
 		"/usr/local/lib"
+		"${PROJECT_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/lib"
 )
+
+# set(SDL2_INCLUDE_DIR "$PROJECT_SOURCE_DIR/libs/SDL2/include")
+# set(SDL2_LIBRARY $PROJECT_SOURCE_DIR/libs/SDL2/lib/x64/SDL2.lib)
 
 # set include dir variables
 set(SDL2_PROCESS_INCLUDES SDL2_INCLUDE_DIR)

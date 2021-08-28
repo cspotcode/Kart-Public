@@ -8,6 +8,7 @@ find_path(GME_INCLUDE_DIR
 		${GME_PKGCONF_INCLUDE_DIRS}
 		"/usr/include/gme"
 		"/usr/local/include/gme"
+		"${PROJECT_SOURCE_DIR}/libs/gme/include/gme"
 )
 
 find_library(GME_LIBRARY
@@ -16,6 +17,7 @@ find_library(GME_LIBRARY
 		${GME_PKGCONF_LIBRARY_DIRS}
 		"/usr/lib"
 		"/usr/local/lib"
+		"${PROJECT_SOURCE_DIR}/libs/gme/win32"
 )
 
 set(GME_PROCESS_INCLUDES GME_INCLUDE_DIR)
