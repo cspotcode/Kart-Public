@@ -1485,9 +1485,9 @@ static menuitem_t OP_HUDOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR, NULL,   "Show Track Addon Name",  &cv_showtrackaddon,   130},
 
-	{IT_STRING | IT_CVAR, NULL,   "Show \"FOCUS LOST\"",  &cv_showfocuslost,   135},
+	{IT_STRING | IT_CVAR, NULL,   "Show \"FOCUS LOST\"",  &cv_showfocuslost,   140},
 	
-	{IT_STRING | IT_CVAR, NULL,	"2D character select",		&cv_skinselectmenu,		145},
+	{IT_STRING | IT_CVAR, NULL,	"2D character select",		&cv_skinselectmenu,		150},
 };
 
 // Ok it's still called chatoptions but we'll put ping display in here to be clean
