@@ -490,7 +490,8 @@ consvar_t cv_aimaxis = {"joyaxis_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 
 consvar_t cv_lookaxis = {"joyaxis_look", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_fireaxis = {"joyaxis_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_driftaxis = {"joyaxis_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_deadzone = {"joy_deadzone", "0.5", CV_FLOAT|CV_SAVE, deadzone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_xdeadzone = {"joy_xdeadzone", "0.3", CV_FLOAT|CV_SAVE, deadzone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_ydeadzone = {"joy_ydeadzone", "0.5", CV_FLOAT|CV_SAVE, deadzone_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_turnaxis2 = {"joyaxis2_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_moveaxis2 = {"joyaxis2_move", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -927,31 +928,44 @@ static INT32 Joy1Axis(axis_input_e axissel)
 	{
 		axisval /= 2;
 		retaxis = joyxmove[axisval];
+
+		if (retaxis < (-JOYAXISRANGE))
+			retaxis = -JOYAXISRANGE;
+		if (retaxis > (+JOYAXISRANGE))
+			retaxis = +JOYAXISRANGE;
+		if (!Joystick.bGamepadStyle && axissel < AXISDEAD)
+		{
+			const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_xdeadzone.value) >> FRACBITS;
+			if (abs(retaxis) <= jdeadzone)
+				return 0;
+		}
+		if (flp) retaxis = -retaxis; //flip it around
+		return retaxis;
 	}
 	else
 	{
 		axisval--;
 		axisval /= 2;
 		retaxis = joyymove[axisval];
+
+		if (retaxis < (-JOYAXISRANGE))
+			retaxis = -JOYAXISRANGE;
+		if (retaxis > (+JOYAXISRANGE))
+			retaxis = +JOYAXISRANGE;
+		if (!Joystick.bGamepadStyle && axissel < AXISDEAD)
+		{
+			const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_ydeadzone.value) >> FRACBITS;
+			if (abs(retaxis) <= jdeadzone)
+				return 0;
+		}
+		if (flp) retaxis = -retaxis; //flip it around
+		return retaxis;
+	}
 	}
 
 #ifdef _arch_dreamcast
 	skipDC:
 #endif
-
-	if (retaxis < (-JOYAXISRANGE))
-		retaxis = -JOYAXISRANGE;
-	if (retaxis > (+JOYAXISRANGE))
-		retaxis = +JOYAXISRANGE;
-	if (!Joystick.bGamepadStyle && axissel < AXISDEAD)
-	{
-		const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_deadzone.value) >> FRACBITS;
-		if (abs(retaxis) <= jdeadzone)
-			return 0;
-	}
-	if (flp) retaxis = -retaxis; //flip it around
-	return retaxis;
-}
 
 static INT32 Joy2Axis(axis_input_e axissel)
 {
