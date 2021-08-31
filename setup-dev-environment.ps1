@@ -44,7 +44,7 @@ $installerExtractedPath = "$PSScriptRoot/assets/installer"
 if (-not (Test-Path $installerExtractedPath)) {
     echo "Assets from the SRB2Kart installer not found.  Attempting to extract..."
     if (-not (Test-Path $installerPath)) {
-        echo "Installer not found.  Download the installer to $installerPath.  You do not need to run the installer; this script will extract the assets."
+        echo "Installer not found.  Downloading..."
         Invoke-WebRequest -uri $installerZipUri -OutFile $installerPath
     }
     Expand-Archive -Path $installerPath -DestinationPath $installerExtractedPath
