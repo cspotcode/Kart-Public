@@ -2,25 +2,23 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.191.1/containers/ubuntu
 {
 	"name": "Ubuntu",
-	"build": {
-		"dockerfile": "Dockerfile",
-		// Update 'VARIANT' to pick an Ubuntu version: focal, bionic
-		"args": { "VARIANT": "focal" }
-	},
+
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "main",
+	"workspaceFolder": "/workspaces/Kart-Public",
 
 	// Set *default* container specific settings.json values on container create.
-	"settings": {},
-
+	"settings": {
+		"terminal.integrated.defaultProfile.linux": "pwsh"
+	},
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"ms-vscode.cmake-tools",
 		"ms-vscode.cpptools",
-		"ms-vscode.powershell"
+		"ms-vscode.powershell",
+		"ms-azuretools.vscode-docker"
 	],
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "uname -a",
