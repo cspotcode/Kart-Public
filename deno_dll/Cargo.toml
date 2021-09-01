@@ -1,0 +1,26 @@
+[package]
+name = "deno_dll"
+version = "0.1.0"
+authors = ["Andrew Bradley <cspotcode@gmail.com>"]
+edition = "2018"
+
+#[lib]
+#name = "deno_dll"
+#crate-type = ["staticlib", "cdylib"]
+#crate-type = ["cdylib"]
+
+#[[bin]]
+#name = "deno_dll"
+#path = "src/main.rs"
+
+[lib]
+#name = "deno_dll"
+#path = "src/lib.rs"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+deno_runtime = "0.24.0"
+deno_core = "0.98.0"
+tokio = "1.11.0"
