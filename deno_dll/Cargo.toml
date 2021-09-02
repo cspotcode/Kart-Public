@@ -4,23 +4,28 @@ version = "0.1.0"
 authors = ["Andrew Bradley <cspotcode@gmail.com>"]
 edition = "2018"
 
-#[lib]
-#name = "deno_dll"
-#crate-type = ["staticlib", "cdylib"]
-#crate-type = ["cdylib"]
-
-#[[bin]]
-#name = "deno_dll"
-#path = "src/main.rs"
-
 [lib]
-#name = "deno_dll"
-#path = "src/lib.rs"
-crate-type = ["lib", "cdylib", "staticlib"]
+name = "deno_dll"
+crate-type = ["lib", "cdylib"]
+
+[[example]]
+name = "main"
+crate-type = ["bin"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-deno_runtime = "0.24.0"
-deno_core = "0.98.0"
+deno_runtime = { path = './deno/runtime' }
+deno_core = { path = './deno/core' }
 tokio = "1.11.0"
+
+# Leaving these here in case I need to fiddle with them in the future.
+#
+#[patch.crates-io]
+#"rusty_v8:0.26.0" = { git = 'https://github.com/denoland/rusty_v8', tag = 'v0.27.0' }
+#"rusty_v8" = "=0.27.0"
+#"deno_core" = { git = 'https://github.com/denoland/deno' }
+#
+#[replace]
+#"rusty_v8:0.26.0" = { git = 'https://github.com/denoland/rusty_v8', tag = 'v0.27.0' }
+#"rusty_v8:0.26.0" = "=0.27.0"

@@ -22,3 +22,8 @@ cargo install cross
 cargo install --force cbindgen
 cbindgen --config cbindgen.toml --crate deno_dll --output deno_dll.h
 ```
+
+## C test harness
+
+Made a VS solution in `./c-test-harness` which uses the DLL, to prove that it
+works.

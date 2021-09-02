@@ -1,1 +1,3 @@
-setInterval(() => console.log('foo'), 1000);
+console.log('Hello from JavaScript!');
+console.log('ticking every second');
+setInterval(() => console.log('tick'), 1000);
