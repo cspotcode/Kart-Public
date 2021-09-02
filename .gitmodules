@@ -1,0 +1,3 @@
+[submodule "deno_dll/deno"]
+	path = deno_dll/deno
+	url = https://github.com/cspotcode/deno
