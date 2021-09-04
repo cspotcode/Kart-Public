@@ -1,4 +1,8 @@
 /target
 /c-test-harness/Debug
 /c-test-harness/x64
-/.vs
+/c-test-harness/.vs
+/rusty_v8
+/demo.js
+/deno_dll.h
+
