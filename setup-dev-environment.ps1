@@ -1,4 +1,5 @@
 param(
+    [switch]$help,
     [switch]$forceRecreateBuildScripts,
     [switch]$build,
     [switch]$run,
@@ -10,6 +11,22 @@ $ErrorActionPreference = 'Stop'
 # Catering to windows powershell.  Prefer using powershell core, but if you don't have that, we'll do our best
 if(-not $IsLinux -and -not $IsMacOS -and -not $IsWindows) {
     $IsWindows = $true
+}
+
+if($help) {
+    write-host ''
+    write-host -ForegroundColor Green -BackgroundColor Black 'Welcome to SRB2Kart developer shell'
+    write-host ''
+    write-host 'This is a PowerShell where you can run ./setup-dev-environment.ps1'
+    write-host './setup-dev-environment.ps1 is a script to automatically compile srb2kart on Windows.'
+    write-host 'It will automatically download and configure the necessary compiler tools and SRB2Kart assets.'
+    write-host 'To setup compiler tools and assets:'
+    write-host '    ./setup-dev-environment.ps1'
+    write-host 'To also build and run the game:'
+    write-host '    ./setup-dev-environment.ps1 -build -run'
+    write-host 'To force a cmake re-generate:'
+    write-host '    ./setup-dev-environment.ps1 -forceRecreateBuildScripts'
+    write-host ''
 }
 
 $buildDir = "$PSScriptRoot/build"
