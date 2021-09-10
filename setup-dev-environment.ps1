@@ -40,6 +40,8 @@ if($IsLinux) {
 
 $toolchainBaseDir = "$PSScriptRoot/toolchain"
 $toolchainDownloadsDir = "$toolchainBaseDir/downloads"
+if(-not (test-path $toolchainBaseDir)) { new-item -ItemType Directory $toolchainBaseDir }
+if(-not (test-path $toolchainDownloadsDir)) { new-item -ItemType Directory $toolchainDownloadsDir }
 
 if($IsWindows) {
     $cmakeZipDownload = "$toolchainDownloadsDir/cmake.zip"
@@ -48,14 +50,18 @@ if($IsWindows) {
     $cmakeBinDir = "$cmakeExtractDir/cmake-3.21.2-windows-x86_64/bin"
     $cmakeCommand = "$cmakeBinDir/cmake.exe"
     if(-not (test-path $cmakeCommand)) {
+        echo "Local copy of cmake not found.  Extracting..."
         if (-not (test-path $cmakeZipDownload)) {
+            echo "Local download of cmake not found.  Downloading..."
             Invoke-WebRequest -uri $cmakeZipUri -OutFile $cmakeZipDownload
+            echo "Downloaded local copy of cmake"
         }
         Expand-Archive $cmakeZipDownload $cmakeExtractDir
+        echo "Extracted local copy of cmake."
     }
 }
 
-$installerPath = "$PSScriptRoot/assets/srb2kart-v13-Installer.exe"
+$installerPath = "$PSScriptRoot/assets/srb2kart-v13-Installer.zip"
 $installerZipUri = 'https://github.com/STJr/Kart-Public/releases/download/v1.3/srb2kart-v13-Installer.exe'
 $installerExtractedPath = "$PSScriptRoot/assets/installer"
 if (-not (Test-Path $installerExtractedPath)) {
@@ -78,23 +84,33 @@ if($IsWindows) {
     $mingwMakeCommand = "$mingwInstallDir/bin/mingw32-make.exe"
 
     if (-not (test-path $mingwMakeCommand)) {
+        echo "Local mingw toolchain not found."
         if (-not (test-path $mingwGetCommand)) {
+            echo "Local mingw-get installer not found."
             if (-not (test-path $mingwGetZip)) {
-                if(-not (test-path $toolchainDownloadsDir)) { new-item -ItemType Directory $toolchainDownloadsDir }
+                echo "Local mingw download not found.  Downloading..."
                 # Invoke-Webrequest does not work, possibly due to user-agent, possibly due to sourceforge server behavior with redirects
                 $webclient = New-Object System.Net.WebClient
                 $webclient.DownloadFile($mingwGetZipUri, $mingwGetZip)
+                echo "Downloaded mingw installer."
             }
+            echo "Extracting mingw installer..."
             Expand-Archive -Path $mingwGetZip -DestinationPath $mingwGetExtractedDir
+            echo "Extracted mingw installer."
         }
+        echo "Using mingw-get to install local mingw toolchain..."
         & $mingwGetCommand install gcc mingw32-make
+        echo "Installed local mingw toolchain."
     }
 }
 
 if($IsWindows) {
+    echo "Adding local mingw and cmake toolchains to your PATH"
     # TODO avoid adding these every time; after the first invocation in a shell, they're already there
     $env:Path = "$mingwBinDir;$cmakeBinDir;$($env:Path)"
 }
+
+echo "Success.  Local toolchain has been configured."
 
 if($forceRecreateBuildScripts) {
     remove-item -Recurse $buildDir
