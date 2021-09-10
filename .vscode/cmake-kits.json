@@ -1,0 +1,12 @@
+[
+  {
+    "name": "SRB2Kart local Windows toolchain: GCC 6.3.0 mingw32",
+    "compilers": {
+      "C": "${workspaceFolder}\\toolchain\\mingw\\bin\\mingw32-gcc.exe",
+      "CXX": "${workspaceFolder}\\toolchain\\mingw\\bin\\mingw32-g++.exe"
+    },
+    "preferredGenerator": {
+      "name": "MinGW Makefiles"
+    }
+  }
+]

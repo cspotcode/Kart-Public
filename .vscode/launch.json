@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [{
+        "name": "(gdb) Launch",
+        "type": "cppdbg",
+        "request": "launch",
+        "cwd": "${workspaceFolder}/build/bin",
+        "program": "${workspaceFolder}/build/bin/srb2kart",
+        "args": [],
+        "stopAtEntry": false,
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ],
+        "windows": {
+            "program": "${workspaceFolder}/build/bin/srb2kart.exe",
+            "miDebuggerPath": "${workspaceFolder}/toolchain/mingw/bin/gdb.exe",
+        }
+    }]
+}

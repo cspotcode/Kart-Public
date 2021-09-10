@@ -1,0 +1,10 @@
+{
+    "deno.enable": true,
+    "cmake.generator": "MinGW Makefiles",
+    "cmake.environment": {
+        "Path": "${workspaceFolder}/toolchain/mingw/bin;${env:Path}",
+        "ECHO": "1"
+    },
+    "cmake.cmakePath": "${workspaceFolder}/toolchain/cmake/cmake-3.21.2-windows-x86_64/bin/cmake.exe",
+    "cmake.buildDirectory": "${workspaceFolder}/build"
+}
