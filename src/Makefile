@@ -1049,6 +1049,24 @@ $(OBJDIR)/lq2x.o: $(INTERFACE)/filter/lq2x.c $(INTERFACE)/filter/lq2x.c \
 endif
 endif
 
+# Used for debugging.  Compare this against the values in `flags.make` emitted by cmake
+logdefines:
+	echo -------
+	@echo MINGW $(MINGW)
+	@echo MINGW64 $(MINGW64)
+	@echo DEBUGMODE $(DEBUGMODE)
+	@echo INTERFACE $(INTERFACE)
+	@echo SDL $(SDL)
+	@echo SDL12 $(SDL12)
+	@echo CC $(CC)
+	@echo CFLAGS $(CFLAGS)
+	@echo WFLAGS $(WFLAGS)
+	@echo OBJDIR $(OBJDIR)
+	@echo OBJS $(OBJS)
+	@echo OPTS $(OPTS)
+	@echo D_DIR $(D_DIR)
+	@echo D_FILES $(D_FILES)
+
 #############################################################
 #
 #############################################################

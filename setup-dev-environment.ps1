@@ -1,5 +1,6 @@
 param(
     [switch]$help,
+    [switch]$fixPowershellExecutionPolicy,
     [switch]$forceRecreateBuildScripts,
     [switch]$build,
     [switch]$run,
@@ -11,6 +12,10 @@ $ErrorActionPreference = 'Stop'
 # Catering to windows powershell.  Prefer using powershell core, but if you don't have that, we'll do our best
 if(-not $IsLinux -and -not $IsMacOS -and -not $IsWindows) {
     $IsWindows = $true
+}
+
+if($fixPowershellExecutionPolicy) {
+    Start-Process -Verb runas powershell.exe -ArgumentList @("-NoLogo", "-NoProfile", "-Command", "Set-ExecutionPolicy -Confirm RemoteSigned")
 }
 
 if($help) {
@@ -27,6 +32,7 @@ if($help) {
     write-host 'To force a cmake re-generate:'
     write-host '    ./setup-dev-environment.ps1 -forceRecreateBuildScripts'
     write-host ''
+    return
 }
 
 $buildDir = "$PSScriptRoot/build"
@@ -50,14 +56,14 @@ if($IsWindows) {
     $cmakeBinDir = "$cmakeExtractDir/cmake-3.21.2-windows-x86_64/bin"
     $cmakeCommand = "$cmakeBinDir/cmake.exe"
     if(-not (test-path $cmakeCommand)) {
-        echo "Local copy of cmake not found.  Extracting..."
+        Write-Host "Local copy of cmake not found.  Extracting..."
         if (-not (test-path $cmakeZipDownload)) {
-            echo "Local download of cmake not found.  Downloading..."
+            Write-Host "Local download of cmake not found.  Downloading..."
             Invoke-WebRequest -uri $cmakeZipUri -OutFile $cmakeZipDownload
-            echo "Downloaded local copy of cmake"
+            Write-Host "Downloaded local copy of cmake"
         }
         Expand-Archive $cmakeZipDownload $cmakeExtractDir
-        echo "Extracted local copy of cmake."
+        Write-Host "Extracted local copy of cmake."
     }
 }
 
@@ -65,13 +71,13 @@ $installerPath = "$PSScriptRoot/assets/srb2kart-v13-Installer.zip"
 $installerZipUri = 'https://github.com/STJr/Kart-Public/releases/download/v1.3/srb2kart-v13-Installer.exe'
 $installerExtractedPath = "$PSScriptRoot/assets/installer"
 if (-not (Test-Path $installerExtractedPath)) {
-    echo "Assets from the SRB2Kart installer not found.  Attempting to extract..."
+    Write-Host "Assets from the SRB2Kart installer not found.  Attempting to extract..."
     if (-not (Test-Path $installerPath)) {
-        echo "Installer not found.  Downloading..."
+        Write-Host "Installer not found.  Downloading..."
         Invoke-WebRequest -uri $installerZipUri -OutFile $installerPath
     }
     Expand-Archive -Path $installerPath -DestinationPath $installerExtractedPath
-    echo "Extracted installer $installerPath into $installerExtractedPath"
+    Write-Host "Extracted installer $installerPath into $installerExtractedPath"
 }
 
 if($IsWindows) {
@@ -84,33 +90,33 @@ if($IsWindows) {
     $mingwMakeCommand = "$mingwInstallDir/bin/mingw32-make.exe"
 
     if (-not (test-path $mingwMakeCommand)) {
-        echo "Local mingw toolchain not found."
+        Write-Host "Local mingw toolchain not found."
         if (-not (test-path $mingwGetCommand)) {
-            echo "Local mingw-get installer not found."
+            Write-Host "Local mingw-get installer not found."
             if (-not (test-path $mingwGetZip)) {
-                echo "Local mingw download not found.  Downloading..."
+                Write-Host "Local mingw download not found.  Downloading..."
                 # Invoke-Webrequest does not work, possibly due to user-agent, possibly due to sourceforge server behavior with redirects
                 $webclient = New-Object System.Net.WebClient
                 $webclient.DownloadFile($mingwGetZipUri, $mingwGetZip)
-                echo "Downloaded mingw installer."
+                Write-Host "Downloaded mingw installer."
             }
-            echo "Extracting mingw installer..."
+            Write-Host "Extracting mingw installer..."
             Expand-Archive -Path $mingwGetZip -DestinationPath $mingwGetExtractedDir
-            echo "Extracted mingw installer."
+            Write-Host "Extracted mingw installer."
         }
-        echo "Using mingw-get to install local mingw toolchain..."
-        & $mingwGetCommand install gcc mingw32-make
-        echo "Installed local mingw toolchain."
+        Write-Host "Using mingw-get to install local mingw toolchain..."
+        & $mingwGetCommand install gcc mingw32-make mingw32-gdb
+        Write-Host "Installed local mingw toolchain."
     }
 }
 
 if($IsWindows) {
-    echo "Adding local mingw and cmake toolchains to your PATH"
+    Write-Host "Adding local mingw and cmake toolchains to your PATH"
     # TODO avoid adding these every time; after the first invocation in a shell, they're already there
     $env:Path = "$mingwBinDir;$cmakeBinDir;$($env:Path)"
 }
 
-echo "Success.  Local toolchain has been configured."
+Write-Host "Success.  Local toolchain has been configured."
 
 if($forceRecreateBuildScripts) {
     remove-item -Recurse $buildDir
@@ -136,10 +142,10 @@ if($run -or $runDedicated) {
     }
     $beforePwd = $PWD.Path
     try {
-        cd $buildDir/bin
-        echo $PWD.Path
+        set-location $buildDir/bin
+        Write-Host $PWD.Path
         & ./$binName @extraArgs
     } finally {
-        cd $beforePwd
+        set-location $beforePwd
     }
 }

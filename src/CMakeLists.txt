@@ -242,6 +242,12 @@ if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
 	"Use SRB2Kart's internal copies of required dependencies (SDL2, PNG, zlib, GME).")
 endif()
 
+add_compile_definitions($<$<CONFIG:Debug>:DEBUGMODE>)
+add_compile_definitions($<$<CONFIG:Debug>:PARANOIA>)
+add_compile_definitions($<$<CONFIG:Debug>:RANGECHECK>)
+add_compile_definitions($<$<CONFIG:Debug>:PACKETDROP>)
+add_compile_definitions($<$<CONFIG:Debug>:MOBJCONSISTANCY>)
+
 if(${SRB2_CONFIG_HAVE_BLUA})
 	add_definitions(-DHAVE_BLUA)
 	set(SRB2_LUA_SOURCES
