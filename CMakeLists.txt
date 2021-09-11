@@ -43,9 +43,10 @@ endmacro()
 # Macro to copy Windows DLLs to Debug/Release folder for easy debugging
 # Note: this is general purpose, we could copy anything. Just using for DLLs on MSVC though
 macro(copy_files_to_build_dir target dlllist_var)
-	if(MSVC)
+	# if(MSVC)
 		# http://stackoverflow.com/a/26983405/3064195
 		foreach(dlllist_item ${${dlllist_var}})
+			message(WARNING dlllist_item ${dlllist_item})
 			get_filename_component(dllname ${dlllist_item} NAME)
 			add_custom_command(TARGET ${target} POST_BUILD
 				COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -53,7 +54,7 @@ macro(copy_files_to_build_dir target dlllist_var)
 				$<TARGET_FILE_DIR:${target}>/${dllname}
 			)
 		endforeach()
-	endif()
+	# endif()
 endmacro()
 
 # bitness check

@@ -50,6 +50,9 @@ set(SRB2_SDL2_HEADERS
 	sdlmain.h
 )
 
+add_compile_definitions(HAVE_THREADS)
+set(SRB2_SDL2_SOURCES ${SRB2_SDL2_SOURCES} i_threads.c)
+
 source_group("Interface Code" FILES ${SRB2_SDL2_SOURCES} ${SRB2_SDL2_HEADERS})
 
 # Dependency
@@ -218,7 +221,7 @@ if(${SDL2_FOUND})
 		)
 	endif()
 
-	if(MSVC)
+	if(${CMAKE_SYSTEM} MATCHES Windows)
 		if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 			set(SDL2_MAIN_FOUND ON)
 			if(${SRB2_SYSTEM_BITS} EQUAL 64)
@@ -234,13 +237,25 @@ if(${SDL2_FOUND})
 		target_link_libraries(SRB2SDL2 PRIVATE
 			${SDL2_MAIN_LIBRARIES}
 		)
-		target_compile_options(SRB2SDL2 PRIVATE
-			/Umain
-			/D_CRT_SECURE_NO_WARNINGS # something about string functions.
-			/D_CRT_NONSTDC_NO_DEPRECATE
-			/DSDLMAIN
-			/D_WINSOCK_DEPRECATED_NO_WARNINGS # Don't care
-		)
+		if(MSVC)
+			target_compile_options(SRB2SDL2 PRIVATE
+				/Umain
+				/D_CRT_SECURE_NO_WARNINGS # something about string functions.
+				/D_CRT_NONSTDC_NO_DEPRECATE
+				/DSDLMAIN
+				/DSDL_MAIN_HANDLED
+				/D_WINSOCK_DEPRECATED_NO_WARNINGS # Don't care
+			)
+		else()
+			# mingw
+			target_compile_options(SRB2SDL2 PRIVATE
+				-D_CRT_SECURE_NO_WARNINGS # something about string functions.
+				-D_CRT_NONSTDC_NO_DEPRECATE
+				-DSDLMAIN
+				-DSDL_MAIN_HANDLED
+				-D_WINSOCK_DEPRECATED_NO_WARNINGS # Don't care
+			)
+		endif()
 	endif()
 
 	target_include_directories(SRB2SDL2 PRIVATE
@@ -270,7 +285,7 @@ if(${SDL2_FOUND})
 			add_custom_command(TARGET SRB2SDL2 POST_BUILD
 				COMMAND ${OBJCOPY} --only-keep-debug $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
 				COMMAND ${OBJCOPY} --strip-debug $<TARGET_FILE:SRB2SDL2>
-				COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_NAME:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
+				COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
 			)
 		endif()
 	endif()

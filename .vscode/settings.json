@@ -6,5 +6,7 @@
         "ECHO": "1"
     },
     "cmake.cmakePath": "${workspaceFolder}/toolchain/cmake/cmake-3.21.2-windows-x86_64/bin/cmake.exe",
-    "cmake.buildDirectory": "${workspaceFolder}/build"
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    // Verbose output to help be debug
+    "cmake.buildArgs": ["--verbose"]
 }

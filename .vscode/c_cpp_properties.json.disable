@@ -1,0 +1,70 @@
+// TODO Delete this
+// This is not needed; the cmake configuration sets this up
+// automatically
+{
+    "configurations": [
+        {
+            "name": "Windows",
+            "defines": [
+                //WMINPUT
+                //NONET
+                //NO_IPV6,
+                //NOHW
+                //USE_PALETTED_TEXTURE
+                //HWRENDER
+                //USEASMVE_PNG
+
+                "USEASM",
+
+                "HAVE_PNG",
+
+                // _LARGEFILE64_SOURCE
+
+                "HAVE_LIBGME",
+                "HAVE_ZLIB",
+                "HAVE_CURL",
+
+                HAVE_MINIUPNPC
+                HAVE_DISCORDRPC
+                USE_STUN
+                NOMD5
+                DC
+                PSP
+                NOPOSTPROCESSING
+                MOBJCONSISTANCY
+                PACKETDROP
+                _DEBUG
+                PARANOIA
+                RANGECHECK
+                NDEBUG
+                ZDEBUG
+                DUMPCONSISTENCY
+                DEVELOP
+                GETTEXT
+                HAVE_VALGRIND
+                _WINDOWS
+                HW3SOUND
+                UNIXCOMMON
+
+            ],
+            "includePath": [
+                "libs/curl/include"
+            ],
+            "intelliSenseMode": "windows-gcc-x64",
+            // "compilerPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\Hostx64\\x64\\cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        },
+        {
+            "name": "Linux",
+            "defines": [],
+            "includePath": [],
+            "intelliSenseMode": "linux-gcc-x64",
+            // "compilerPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\Hostx64\\x64\\cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

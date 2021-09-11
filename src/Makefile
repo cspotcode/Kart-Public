@@ -1066,6 +1066,8 @@ logdefines:
 	@echo OPTS $(OPTS)
 	@echo D_DIR $(D_DIR)
 	@echo D_FILES $(D_FILES)
+	@echo WINDRES $(WINDRES)
+	@echo WINDRESFLAGS $(WINDRESFLAGS)
 
 #############################################################
 #
